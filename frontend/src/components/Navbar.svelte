@@ -41,6 +41,8 @@
       } catch {
         dbPaths = [];
       }
+    } else {
+      dbPaths = ["./db.sqlite3"];
     }
   }
 
