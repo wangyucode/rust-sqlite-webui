@@ -18,7 +18,7 @@
 ```bash
 cd web
 npm install
-npm run dev
+npm start
 ```
 
 前端服务默认运行在 `http://localhost:5173`。

@@ -18,7 +18,7 @@ Node.js (v18+) is required.
 ```bash
 cd web
 npm install
-npm run dev
+npm start
 ```
 
 The frontend service runs at `http://localhost:5173` by default.

@@ -1,0 +1,41 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Rust: Run Backend",
+			"type": "shell",
+			"command": "cargo run",
+			"options": {
+				"env": {
+					"RUST_LOG": "debug"
+				}
+			},
+			"group": "none",
+			"presentation": {
+				"reveal": "always",
+				"panel": "new",
+				"group": "backend"
+			},
+			"runOptions": {
+				"runOn": "folderOpen"
+			}
+		},
+		{
+			"label": "NPM: Run Frontend",
+			"type": "shell",
+			"command": "npm start",
+			"options": {
+				"cwd": "${workspaceFolder}/web"
+			},
+			"group": "none",
+			"presentation": {
+				"reveal": "always",
+				"panel": "new",
+				"group": "frontend"
+			},
+			"runOptions": {
+				"runOn": "folderOpen"
+			}
+		}
+	]
+}

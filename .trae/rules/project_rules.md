@@ -1,4 +1,5 @@
 1. Tech Stack: Rust, SQLite, Svelte, Vite, DaisyUI
-2. Prefer using DaisyUI components.
-3. Maintain code readability and maintainability.
-4. Use English for comments and commit messages.
+2. use context7.
+3. Prefer using DaisyUI components.
+4. Maintain code readability and maintainability.
+5. Use English for comments and commit messages.
