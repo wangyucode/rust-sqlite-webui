@@ -1,0 +1,19 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Frontend",
+			"type": "shell",
+			"command": "npm start",
+			"group": "none",
+			"presentation": {
+				"reveal": "always",
+				"panel": "new",
+				"group": "frontend"
+			},
+			"runOptions": {
+				"runOn": "folderOpen"
+			}
+		}
+	]
+}

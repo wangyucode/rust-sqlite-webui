@@ -1,5 +1,5 @@
-/target
-/web/node_modules
-/web/dist
+/backend/target
+/frontend/node_modules
+/frontend/dist
 
 .DS_Store

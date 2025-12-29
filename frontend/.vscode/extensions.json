@@ -1,7 +1,6 @@
 {
   "recommendations": [
     "biomejs.biome",
-    "rust-lang.rust-analyzer",
     "svelte.svelte-vscode"
   ]
 }
