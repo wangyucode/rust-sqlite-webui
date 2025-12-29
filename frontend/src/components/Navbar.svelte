@@ -1,146 +1,133 @@
 <script lang="ts">
   import { onMount } from "svelte";
-
-  let isDark = false;
+  import ThemeSwitch from "./ThemeSwitch.svelte";
 
   // DB Logic
-  let dbPaths: string[] = [];
+  let dbFiles: string[] = [];
   let currentPath = "";
   let inputPath = "";
   let isLoading = false;
-  let showInput = false;
   let errorMsg = "";
+  let showCreateDialog = false;
 
   const API_URL = "http://localhost:3000/api/connect";
+  const FILES_API_URL = "http://localhost:3000/api/db-files";
 
   onMount(async () => {
-    // Theme Logic
-    const theme = localStorage.getItem("theme");
-    if (theme === "dark") {
-      isDark = true;
-      document.documentElement.setAttribute("data-theme", "dark");
-    } else if (theme === "light") {
-      isDark = false;
-      document.documentElement.setAttribute("data-theme", "light");
-    }
-
     // DB Auto-load Logic
-    loadPaths();
-    if (dbPaths.length > 0) {
-      await autoLoad();
-    } else {
-      showInput = true;
-    }
+    await fetchDbFiles();
   });
 
-  function loadPaths() {
-    const stored = localStorage.getItem("db-paths");
-    if (stored) {
-      try {
-        dbPaths = JSON.parse(stored);
-      } catch {
-        dbPaths = [];
+  async function fetchDbFiles() {
+    try {
+      const res = await fetch(FILES_API_URL);
+      if (res.ok) {
+        dbFiles = await res.json();
       }
+    } catch (e) {
+      console.error("Failed to fetch db files", e);
+      dbFiles = [];
+    }
+
+    if (dbFiles.length > 0) {
+      const last = localStorage.getItem("last-db-file");
+      if (last && dbFiles.includes(last)) {
+        currentPath = last;
+      } else {
+        currentPath = dbFiles[0];
+      }
+      await autoLoad();
     } else {
-      dbPaths = ["./db.sqlite3"];
+      showCreateDialog = true;
     }
   }
 
-  function savePaths() {
-    localStorage.setItem("db-paths", JSON.stringify(dbPaths));
+  function saveLastFile(path: string) {
+    localStorage.setItem("last-db-file", path);
   }
 
-  async function connectAPI(path: string): Promise<boolean> {
+  async function connectAPI(
+    path: string,
+    create: boolean = false,
+  ): Promise<{ success: boolean; status: number }> {
     try {
       const res = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path }),
+        body: JSON.stringify({ path, create }),
       });
-      return res.ok;
+      return { success: res.ok, status: res.status };
     } catch (e) {
       console.error("Connection failed", e);
-      return false;
+      return { success: false, status: 500 };
     }
   }
 
   async function autoLoad() {
-    if (dbPaths.length === 0) {
-      showInput = true;
+    if (!currentPath) return;
+
+    isLoading = true;
+    const { success } = await connectAPI(currentPath);
+    isLoading = false;
+
+    if (success) {
+      saveLastFile(currentPath);
+    } else {
+      errorMsg = "Failed to connect to " + currentPath;
+    }
+  }
+
+  function onConnectSuccess(path: string) {
+    saveLastFile(path);
+    currentPath = path;
+    inputPath = "";
+    errorMsg = "";
+
+    if (!dbFiles.includes(path)) {
+      dbFiles = [path, ...dbFiles];
+    }
+  }
+
+  async function handleCreateConfirm() {
+    if (!inputPath) {
+      errorMsg = "Filename cannot be empty.";
+      return;
+    }
+
+    if (inputPath.includes("/") || inputPath.includes("\\")) {
+      errorMsg = "Invalid filename. Only filenames are allowed.";
       return;
     }
 
     isLoading = true;
-    const path = dbPaths[0];
-    const success = await connectAPI(path);
+    const { success } = await connectAPI(inputPath, true);
     isLoading = false;
 
     if (success) {
-      currentPath = path;
-      showInput = false;
+      showCreateDialog = false;
+      onConnectSuccess(inputPath);
     } else {
-      // Failed (404/Error), remove this path and try next
-      dbPaths.shift();
-      dbPaths = dbPaths; // Update reactivity
-      savePaths();
-      await autoLoad(); // Recursive call
-    }
-  }
-
-  async function handleManualSubmit() {
-    if (!inputPath) return;
-    isLoading = true;
-    errorMsg = "";
-
-    const success = await connectAPI(inputPath);
-    isLoading = false;
-
-    if (success) {
-      // Add to top of list
-      dbPaths = dbPaths.filter((p) => p !== inputPath);
-      dbPaths.unshift(inputPath);
-      dbPaths = dbPaths;
-      savePaths();
-
-      currentPath = inputPath;
-      showInput = false;
-      inputPath = "";
-    } else {
-      errorMsg = "Failed to load database. Please check the path.";
+      errorMsg = "Failed to create database.";
     }
   }
 
   async function handleSelectorChange() {
     if (!currentPath) return;
     isLoading = true;
-    const success = await connectAPI(currentPath);
+    const { success } = await connectAPI(currentPath);
     isLoading = false;
 
     if (success) {
-      // Promote to top
-      dbPaths = dbPaths.filter((p) => p !== currentPath);
-      dbPaths.unshift(currentPath);
-      dbPaths = dbPaths;
-      savePaths();
+      onConnectSuccess(currentPath);
     } else {
-      // Failed (e.g. file moved), treat as autoLoad failure
-      dbPaths = dbPaths.filter((p) => p !== currentPath);
-      dbPaths = dbPaths;
-      savePaths();
-      await autoLoad();
+      errorMsg = "Failed to switch to " + currentPath;
     }
   }
 
-  function switchToInput() {
-    showInput = true;
+  function openCreateDialog() {
     inputPath = "";
     errorMsg = "";
-  }
-
-  function toggleTheme() {
-    const theme = isDark ? "dark" : "light";
-    document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("theme", theme);
+    showCreateDialog = true;
   }
 </script>
 
@@ -152,113 +139,77 @@
   </h1>
   <div class="navbar-center flex-1 max-w-128 flex flex-col">
     <div class="join w-full">
-      {#if showInput}
+      <select
+        class="select select-bordered w-full join-item"
+        bind:value={currentPath}
+        on:change={handleSelectorChange}
+        disabled={isLoading}
+      >
+        {#if dbFiles.length === 0}
+          <option disabled selected value="">No databases found</option>
+        {/if}
+        {#each dbFiles as path}
+          <option value={path}>{path}</option>
+        {/each}
+      </select>
+      <button
+        class="btn btn-primary join-item"
+        on:click={openCreateDialog}
+        title="Create"
+      >
+        <svg
+          class="size-6"
+          fill="currentColor"
+          viewBox="0 0 1024 1024"
+          version="1.1"
+          xmlns="http://www.w3.org/2000/svg"
+          ><path
+            d="M456.032 428.064c247.264 0 419.744-62.656 419.744-139.936V204.192c0-77.248-172.448-139.936-419.744-139.936S64.288 126.912 64.288 204.192v83.936c0 77.248 144.448 139.936 391.744 139.936z m-50.784 334.784c-169.824-6.304-268.992-45.056-321.152-96.928-13.312 13.248-19.808 27.36-19.808 41.984v111.936c0 77.248 144.448 139.872 391.744 139.872 24.736 0 48.832-0.768 72.512-2.016a307.2 307.2 0 0 1-123.296-194.848z m-5.12-56.224a306.304 306.304 0 0 1 70.4-194.72c-5.312 0.032-10.432 0.096-15.904 0.096-200.448 0-313.504-41.152-370.528-97.952-13.312 13.28-19.808 27.36-19.808 41.984v111.936c0 71.168 122.976 129.888 335.84 138.656z m307.744-250.56a251.84 251.84 0 1 0 0 503.68 251.84 251.84 0 0 0 0-503.68z m157.44 275.52h-133.76v133.728H684.16v-133.728h-133.728v-47.392h133.728v-133.76h47.424v133.76h133.76v47.392z"
+          ></path></svg
+        >
+      </button>
+    </div>
+
+    <!-- Create DB Confirmation Modal -->
+    <dialog class="modal" class:modal-open={showCreateDialog}>
+      <div class="modal-box">
+        <h3 class="font-bold text-lg">Create New Database</h3>
         <input
           type="text"
-          placeholder="SQLite file path (e.g. /path/to/your.db)"
-          class="input input-bordered w-full join-item"
+          placeholder="Database filename (e.g my.db)"
+          class="input input-bordered w-full mt-4"
           bind:value={inputPath}
-          on:keydown={(e) => e.key === "Enter" && handleManualSubmit()}
+          on:keydown={(e) => e.key === "Enter" && handleCreateConfirm()}
         />
-        <button
-          class="btn btn-primary join-item"
-          title="Load Database"
-          on:click={handleManualSubmit}
-          disabled={isLoading}
-        >
-          {#if isLoading}
-            <span class="loading loading-spinner loading-sm"></span>
-          {:else}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="currentColor"
-              class="size-6"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M9 8.25H7.5a2.25 2.25 0 0 0-2.25 2.25v9a2.25 2.25 0 0 0 2.25 2.25h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25H15M9 12l3 3m0 0 3-3m-3 3V2.25"
-              />
-            </svg>
-          {/if}
-        </button>
-      {:else}
-        <select
-          class="select select-bordered w-full join-item"
-          bind:value={currentPath}
-          on:change={handleSelectorChange}
-          disabled={isLoading}
-        >
-          {#each dbPaths as path}
-            <option value={path}>{path}</option>
-          {/each}
-        </select>
-        <button
-          class="btn btn-secondary join-item"
-          on:click={switchToInput}
-          title="Open New Database"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width="1.5"
-            stroke="currentColor"
-            class="size-6"
+        <div class="modal-action">
+          <button class="btn" on:click={() => (showCreateDialog = false)}
+            >Cancel</button
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M12 4.5v15m7.5-7.5h-15"
-            />
-          </svg>
+          <button
+            class="btn btn-primary"
+            on:click={handleCreateConfirm}
+            disabled={isLoading}
+          >
+            {#if isLoading}
+              <span class="loading loading-spinner loading-xs"></span>
+            {/if}
+            Create
+          </button>
+        </div>
+      </div>
+    </dialog>
+    {#if errorMsg && !showCreateDialog}
+      <div class="toast toast-top toast-center z-50">
+        <button
+          class="alert alert-error text-white shadow-lg cursor-pointer text-start"
+          on:click={() => (errorMsg = "")}
+        >
+          <span>{errorMsg}</span>
         </button>
-      {/if}
-    </div>
-    {#if errorMsg && showInput}
-      <span class="text-error text-xs mt-1 ml-1">{errorMsg}</span>
+      </div>
     {/if}
   </div>
   <div class="navbar-end w-auto">
-    <label class="swap swap-rotate btn btn-circle">
-      <!-- this hidden checkbox controls the state -->
-      <input
-        type="checkbox"
-        class="theme-controller"
-        value="dark"
-        bind:checked={isDark}
-        on:change={toggleTheme}
-      />
-
-      <!-- sun icon -->
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke-width="1.5"
-        stroke="currentColor"
-        class="swap-on size-6"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"
-        />
-      </svg>
-
-      <!-- moon icon -->
-      <svg
-        class="swap-off fill-current size-6"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-      >
-        <path
-          d="M21.64,13a1,1,0,0,0-1.05-.14,8.05,8.05,0,0,1-3.37.73A8.15,8.15,0,0,1,9.08,5.49a8.59,8.59,0,0,1,.25-2A1,1,0,0,0,8,2.36,10.14,10.14,0,1,0,22,14.05,1,1,0,0,0,21.64,13Zm-9.5,6.69A8.14,8.14,0,0,1,7.08,5.22v.27A10.15,10.15,0,0,0,17.22,15.63a9.79,9.79,0,0,0,2.1-.22A8.11,8.11,0,0,1,12.14,19.73Z"
-        />
-      </svg>
-    </label>
+    <ThemeSwitch />
   </div>
 </div>

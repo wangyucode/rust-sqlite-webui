@@ -1,5 +1,8 @@
 /backend/target
+/backend/db
 /frontend/node_modules
 /frontend/dist
+
+.trae/documents
 
 .DS_Store
