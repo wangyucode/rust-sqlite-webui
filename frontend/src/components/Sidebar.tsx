@@ -44,12 +44,12 @@ const Sidebar: Component = () => {
   };
 
   return (
-    <div class="flex-shrink-0 w-24 sm:w-64 bg-base-100 rounded-box p-4 shadow-lg h-full overflow-y-auto">
+    <div class="flex-shrink-0 bg-base-100 rounded-box p-2 sm:p-4 shadow-lg h-full overflow-y-auto min-h-0">
       <h2 class="text-lg font-bold px-2">Tables</h2>
       {tables().length === 0 ? (
         <div class="text-gray-500 text-sm px-2 my-2">No tables found</div>
       ) : (
-        <ul class="menu w-full flex flex-col gap-1">
+        <ul class="menu w-full flex flex-col gap-1 p-0 my-2">
           <For each={tables()}>
             {(table) => (
               <li class="flex flex-row items-center justify-between">
