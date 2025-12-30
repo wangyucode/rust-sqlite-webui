@@ -6,6 +6,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sqlx::{Column, Row, TypeInfo};
+use sqlx::sqlite::SqliteRow;
 use crate::state::AppState;
 
 #[derive(Deserialize)]
@@ -21,6 +22,80 @@ pub struct QueryResponse {
     pub affected_rows: Option<u64>,
     pub execution_time: f64,
     pub error: Option<String>,
+}
+
+
+fn serialize_row(row: &SqliteRow) -> Vec<Value> {
+    let mut row_data = Vec::new();
+    for (i, _) in row.columns().iter().enumerate() {
+        let col = row.column(i);
+        let type_info = col.type_info();
+        let type_name = type_info.name();
+        
+        let val: Value = if type_name == "NULL" {
+            if let Ok(v) = row.try_get::<String, _>(i) {
+                Value::String(v)
+            } else if let Ok(v) = row.try_get::<i64, _>(i) {
+                Value::Number(v.into())
+            } else {
+                Value::Null
+            }
+        } else if type_name == "INTEGER" || type_name == "INT" || type_name == "BIGINT" || type_name == "int8" {
+            match row.try_get::<i64, _>(i) {
+                Ok(v) => Value::Number(v.into()),
+                Err(_) => {
+                    match row.try_get::<String, _>(i) {
+                        Ok(v) => Value::String(v),
+                        Err(_) => Value::Null,
+                    }
+                },
+            }
+        } else if type_name == "REAL" || type_name == "FLOAT" || type_name == "DOUBLE" {
+            match row.try_get::<f64, _>(i) {
+                Ok(v) => {
+                    if let Some(n) = serde_json::Number::from_f64(v) {
+                        Value::Number(n)
+                    } else {
+                        Value::Null 
+                    }
+                },
+                Err(_) => {
+                    match row.try_get::<String, _>(i) {
+                        Ok(v) => Value::String(v),
+                        Err(_) => Value::Null,
+                    }
+                },
+            }
+        } else if type_name == "BOOLEAN" || type_name == "BOOL" {
+            match row.try_get::<bool, _>(i) {
+                Ok(v) => Value::Bool(v),
+                Err(_) => {
+                    match row.try_get::<String, _>(i) {
+                        Ok(v) => Value::String(v),
+                        Err(_) => Value::Null,
+                    }
+                },
+            }
+        } else if type_name == "BLOB" {
+            match row.try_get::<Vec<u8>, _>(i) {
+                Ok(v) => {
+                    let hex: String = v.iter().map(|b| format!("{:02X}", b)).collect();
+                    Value::String(format!("x'{}'", hex))
+                },
+                Err(_) => Value::Null,
+            }
+        } else {
+            match row.try_get::<String, _>(i) {
+                Ok(v) => Value::String(v),
+                Err(_) => {
+                    // Fallback: try to convert whatever it is to string if possible, or use a placeholder
+                    Value::String(format!("[{}]", type_name))
+                }
+            }
+        };
+        row_data.push(val);
+    }
+    row_data
 }
 
 pub async fn execute_query(
@@ -72,79 +147,8 @@ pub async fn execute_query(
                 let columns: Vec<String> = rows[0].columns().iter().map(|c| c.name().to_string()).collect();
                 let column_types: Vec<String> = rows[0].columns().iter().map(|c| c.type_info().name().to_string()).collect();
                 
-                let mut data = Vec::new();
-                for row in rows {
-                    let mut row_data = Vec::new();
-                    for (i, _) in row.columns().iter().enumerate() {
-                        let col = row.column(i);
-                        let type_info = col.type_info();
-                        let type_name = type_info.name();
-                        
-                        let val: Value = if type_name == "NULL" {
-                            if let Ok(v) = row.try_get::<String, _>(i) {
-                                Value::String(v)
-                            } else if let Ok(v) = row.try_get::<i64, _>(i) {
-                                Value::Number(v.into())
-                            } else {
-                                Value::Null
-                            }
-                        } else if type_name == "INTEGER" || type_name == "INT" || type_name == "BIGINT" || type_name == "int8" {
-                            match row.try_get::<i64, _>(i) {
-                                Ok(v) => Value::Number(v.into()),
-                                Err(_) => {
-                                    match row.try_get::<String, _>(i) {
-                                        Ok(v) => Value::String(v),
-                                        Err(_) => Value::Null,
-                                    }
-                                },
-                            }
-                        } else if type_name == "REAL" || type_name == "FLOAT" || type_name == "DOUBLE" {
-                            match row.try_get::<f64, _>(i) {
-                                Ok(v) => {
-                                    if let Some(n) = serde_json::Number::from_f64(v) {
-                                    Value::Number(n)
-                                    } else {
-                                    Value::Null 
-                                    }
-                                },
-                                Err(_) => {
-                                    match row.try_get::<String, _>(i) {
-                                        Ok(v) => Value::String(v),
-                                        Err(_) => Value::Null,
-                                    }
-                                },
-                            }
-                        } else if type_name == "BOOLEAN" || type_name == "BOOL" {
-                            match row.try_get::<bool, _>(i) {
-                                Ok(v) => Value::Bool(v),
-                                Err(_) => {
-                                    match row.try_get::<String, _>(i) {
-                                        Ok(v) => Value::String(v),
-                                        Err(_) => Value::Null,
-                                    }
-                                },
-                            }
-                        } else if type_name == "BLOB" {
-                            match row.try_get::<Vec<u8>, _>(i) {
-                                Ok(v) => {
-                                    let hex: String = v.iter().map(|b| format!("{:02X}", b)).collect();
-                                    Value::String(format!("x'{}'", hex))
-                                },
-                                Err(_) => Value::Null,
-                            }
-                        } else {
-                            match row.try_get::<String, _>(i) {
-                                Ok(v) => Value::String(v),
-                                Err(_) => {
-                                    // Fallback: try to convert whatever it is to string if possible, or use a placeholder
-                                    Value::String(format!("[{}]", type_name))
-                                }
-                            }
-                        };
-                        row_data.push(val);
-                    }
-                    data.push(row_data);
-                }
+                // Use the helper function to map rows
+                let data: Vec<Vec<Value>> = rows.iter().map(serialize_row).collect();
 
                 Json(QueryResponse {
                     columns,
