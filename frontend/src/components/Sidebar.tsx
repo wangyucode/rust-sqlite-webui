@@ -1,14 +1,22 @@
 import { Component, For } from "solid-js";
-import { tables } from "../lib/store";
+import { setShouldFocusSqlInput, setSqlContent, tables } from "../lib/store";
 
 const Sidebar: Component = () => {
+  const handleAddTable = () => {
+    setSqlContent(`CREATE TABLE table_name (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL
+);`);
+    setShouldFocusSqlInput(true);
+  };
+
   return (
     <div class="flex-shrink-0 w-24 sm:w-64 bg-base-100 rounded-box p-4 shadow-lg h-full overflow-y-auto">
       <h2 class="text-lg font-bold mb-4 px-2">Tables</h2>
       {tables().length === 0 ? (
         <div class="text-gray-500 text-sm px-2">No tables found</div>
       ) : (
-        <ul class="menu w-full p-0">
+        <ul class="menu w-full">
           <For each={tables()}>
             {(table) => (
               <li>
@@ -34,6 +42,26 @@ const Sidebar: Component = () => {
           </For>
         </ul>
       )}
+      <button
+        class="btn btn-sm btn-square btn-info mt-4"
+        title="Add Table"
+        onClick={handleAddTable}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="size-6"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 4.5v15m7.5-7.5h-15"
+          />
+        </svg>
+      </button>
     </div>
   );
 };
