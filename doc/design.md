@@ -33,7 +33,7 @@ Adopts a frontend-backend separation architecture, but in the production environ
 graph TD
     User[User Browser] <--> |HTTP/WebSocket| Backend[Rust Axum Server]
     Backend <--> |SQLx| SQLite[SQLite DB File]
-    Backend --> |Serve| Static[Frontend Static Resources (SolidJS Build Artifacts)]
+    Backend --> |Serve| Static[Frontend Static Resources - SolidJS Build Artifacts]
 ```
 
 ### 3.2 Directory Structure Planning
