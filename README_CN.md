@@ -1,15 +1,64 @@
-[English](README.md) | [简体中文]
+<div align="center">
+  <img src="frontend/public/logo.png" width=256></img>
+  <p><strong>Rust SQLite WebUI - 一个极致轻量的 SQLite Web 管理工具</strong></p>
+  
+  [English](README.md) | 简体中文
+  
+</div>
 
 # SQLite WebUI
 
-基于 Rust (Axum) 和 Solid.js 的轻量级 SQLite Web 管理工具。
+基于 Rust (Axum) 和 Solid.js 的 **极致轻量** SQLite Web 管理工具。
+
+- **极致轻量**: Docker 镜像大小仅 **~6.5MB**。
+- **高性能**: 运行时内存占用仅 **~700KB**。
+
+![截图](screenshot.png)
 
 ## 技术栈
 
 - **后端**: Rust, Axum, SQLx, Tokio
 - **前端**: Solid.js, Vite, TailwindCSS, DaisyUI
 
-## 快速开始
+## 使用说明
+
+推荐使用 Docker 运行本项目。
+
+### Docker Run
+
+```bash
+docker run -d \
+  -p 3000:3000 \
+  -v sqlite.db:/app/db/sqlite.db \
+  -e API_KEY=your_secret_key \
+  --name sqlite-webui \
+  wangyucode/rust-sqlite-webui
+```
+
+### Docker Compose
+
+```yaml
+version: '3'
+services:
+  sqlite-webui:
+    image: wangyucode/rust-sqlite-webui
+    ports:
+      - "3000:3000"
+    volumes:
+      - sqlite.db:/app/db/sqlite.db
+    environment:
+      - API_KEY=your_secret_key
+```
+
+### 配置
+
+- **DB files**: 它会列出 `/app/db/` 目录下的所有 SQLite 数据库文件。所以只需要将数据库文件挂载到 `/app/db/` 目录即可。
+
+- **API_KEY**: 用于访问 WebUI 的认证密钥。
+  - 默认值: `your-super-secure-key`
+  - 生产环境建议设置复杂的密码。
+
+## 开发指南
 
 ### 1. 启动前端开发服务器
 

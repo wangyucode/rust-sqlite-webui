@@ -25,12 +25,9 @@ jobs:
         run: |
           # Extract version
           VERSION=$(grep '^version =' backend/Cargo.toml | cut -d '"' -f2)
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          
+          echo "VERSION=$VERSION" >> $GITHUB_ENV          
           # Replace version in Cargo.toml with 0.0.0
           sed -i 's/^version = ".*"/version = "0.0.0"/' backend/Cargo.toml
-
-          cat backend/Cargo.toml
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5

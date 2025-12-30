@@ -1,15 +1,65 @@
-[English] | [简体中文](README_CN.md)
+<div align="center">
+  <img src="frontend/public/logo.png" width=256></img>
+  <p><strong>Rust SQLite WebUI - A extreme lightweight SQLite Web administration tool</strong></p>
+  
+  English | [简体中文](README.ZH-CN.md)
+  
+</div>
+
 
 # SQLite WebUI
 
-A lightweight SQLite Web administration tool based on Rust (Axum) and Solid.js.
+A extreme lightweight SQLite Web administration tool based on Rust (Axum) and Solid.js.
+
+- **Extreme Lightweight**: Docker image size is only **~6.5MB**.
+- **High Performance**: Runtime memory usage is only **~700KB**.
+
+![screenshot](screenshot.png)
 
 ## Tech Stack
 
 - **Backend**: Rust, Axum, SQLx, Tokio
 - **Frontend**: Solid.js, Vite, TailwindCSS, DaisyUI
 
-## Quick Start
+## Usage
+
+Recommend using Docker to run this application.
+
+### Docker Run
+
+```bash
+docker run -d \
+  -p 3000:3000 \
+  -v sqlite.db:/app/db/sqlite.db \
+  -e API_KEY=your_secret_key \
+  --name sqlite-webui \
+  wangyucode/rust-sqlite-webui
+```
+
+### Docker Compose
+
+```yaml
+version: '3'
+services:
+  sqlite-webui:
+    image: wangyucode/rust-sqlite-webui
+    ports:
+      - "3000:3000"
+    volumes:
+      - sqlite.db:/app/db/sqlite.db
+    environment:
+      - API_KEY=your_secret_key
+```
+
+### Configuration
+
+- **DB files**: it will list the SQLite database files in the `/app/db/` directory. so just mount the dbs to `/app/db/` directory.
+
+- **API_KEY**: The authentication key for accessing the WebUI.
+  - Default: `your-super-secure-key`
+  - It is recommended to set a strong password in production.
+
+## Development
 
 ### 1. Start Frontend Development Server
 

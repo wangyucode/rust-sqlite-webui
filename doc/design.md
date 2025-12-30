@@ -4,11 +4,11 @@
 
 ## 1. Project Overview
 
-This project aims to build a Web-based SQLite database management tool, striving for ultimate simplicity and lightweight. Users can directly manage local SQLite database files, execute SQL queries, and view/edit data through a browser.
+This project aims to build a Rust + SolidJS SQLite database management tool, striving for ultimate simplicity and lightweight. Users can directly manage local SQLite database files, execute SQL queries, and view/edit data through a browser.
 
 **Core Goals**:
-- **Lightweight**: Single binary distribution (ideally), ready to use out of the box.
-- **High Performance**: Capable of smoothly handling large data displays (virtual scrolling).
+- **Lightweight**: Single binary distribution, ready to use out of the box. Docker image size is only **~6.5MB**.
+- **High Performance**: Runtime memory usage is only **~700KB**. Capable of smoothly handling large data displays.
 - **Simple & Easy to Use**: UI design based on the "Less is More" principle, focusing on core SQL operations.
 
 ## 2. Tech Stack Architecture
@@ -18,15 +18,11 @@ This project aims to build a Web-based SQLite database management tool, striving
 - **Runtime**: `Tokio` - Standard for Rust asynchronous ecosystem.
 - **Database Interaction**: `SQLx` - Pure Rust asynchronous SQL driver, supporting connection pools.
 - **Serialization**: `Serde` + `Serde JSON` - Handling frontend-backend data exchange.
-- **Config/CLI**: `Clap` - Command-line argument parsing.
 
 ### 2.2 Frontend (Modern Web)
-- **Framework**: `Svelte 5` - Next-generation reactive framework, no virtual DOM, Runes state management.
+- **Framework**: `Solid.js` - High-performance reactive framework, no virtual DOM.
 - **Build Tool**: `Vite` - Blazing fast development server and build tool.
 - **UI Framework**: `TailwindCSS` + `DaisyUI` - Utility-first CSS framework and semantic component library.
-- **Code Editor**: `CodeMirror 6` - Modern, modular code editor supporting SQL syntax highlighting and autocomplete.
-- **Data Table**: `TanStack Table` (Svelte Adapter) - Headless table library for building high-performance data tables.
-- **State Management**: Svelte 5 built-in Runes (`$state`, `$derived`).
 
 ## 3. System Architecture Design
 
@@ -37,75 +33,82 @@ Adopts a frontend-backend separation architecture, but in the production environ
 graph TD
     User[User Browser] <--> |HTTP/WebSocket| Backend[Rust Axum Server]
     Backend <--> |SQLx| SQLite[SQLite DB File]
-    Backend --> |Serve| Static[Frontend Static Resources (Svelte Build Artifacts)]
+    Backend --> |Serve| Static[Frontend Static Resources (SolidJS Build Artifacts)]
 ```
 
 ### 3.2 Directory Structure Planning
 ```text
 rust-sqlite-webui/
-├── Cargo.toml          # Rust project configuration
-├── src/                # Backend source code
-│   ├── main.rs         # Entry point
-│   ├── api/            # API route handling
-│   │   ├── mod.rs
-│   │   ├── query.rs    # SQL execution interface
-│   │   └── db.rs       # Database metadata interface
-│   ├── state.rs        # Global application state (connection pool, etc.)
-│   └── utils.rs        # Utility functions
-├── web/                # Frontend source code (Svelte Kit / Vite Project)
+├── backend/            # Backend source code (Rust)
+│   ├── Cargo.toml
+│   └── src/
+│       ├── main.rs     # Entry point & Routing
+│       ├── state.rs    # Global state
+│       └── handlers/   # API handlers
+│           ├── mod.rs
+│           ├── connection.rs
+│           ├── query.rs
+│           └── health.rs
+├── frontend/           # Frontend source code (SolidJS)
 │   ├── package.json
 │   ├── vite.config.ts
-│   ├── tailwind.config.js
-│   ├── src/
-│   │   ├── lib/        # Components
-│   │   │   ├── Editor.svelte
-│   │   │   ├── DataTable.svelte
-│   │   │   └── Sidebar.svelte
-│   │   ├── App.svelte  # Root component
-│   │   └── main.ts     # Entry point
-│   └── public/
+│   └── src/
+│       ├── App.tsx     # Root component
+│       ├── lib/        # Logic & API client
+│       └── components/ # UI Components
 └── doc/                # Documentation
 ```
 
 ## 4. Core Functional Modules & API Design
 
 ### 4.1 Connection Management
-Although SQLite is a file database, we need to manage the "currently open database".
+Manage SQLite database connections.
 - **API**:
-  - `POST /api/connect`: Connect to the SQLite file at the specified path.
-  - `GET /api/status`: Get current connection status.
-  - `POST /api/disconnect`: Close connection.
+  - `POST /api/connect`: Connect to a local SQLite file.
+    - **Request**: `{ "path": "test.db", "create": true }`
+  - `GET /api/db-files`: List available database files in the `./db` directory.
+  - `GET /api/health`: Health check.
 
 ### 4.2 Database Metadata
-Used for displaying database structure in the sidebar.
+Used for displaying database structure.
 - **API**:
-  - `GET /api/tables`: Get all table names.
-  - `GET /api/tables/:name/schema`: Get structure of a specific table (columns, types, primary keys).
-  - `GET /api/views`: Get all views.
+  - `GET /api/tables`: Get all table names in the current connection.
 
 ### 4.3 SQL Executor
 Core function for executing user-input SQL.
 - **API**:
   - `POST /api/query`: Execute SQL statement.
     - **Request**: `{ "sql": "SELECT * FROM users LIMIT 100" }`
-    - **Response**: `{ "columns": ["id", "name"], "rows": [[1, "Alice"], [2, "Bob"]], "execution_time_ms": 12 }`
-    - **Error Handling**: Return detailed SQL error information.
+    - **Response**: 
+      ```json
+      {
+        "columns": ["id", "name"],
+        "column_types": ["INTEGER", "TEXT"],
+        "rows": [[1, "Alice"], [2, "Bob"]],
+        "affected_rows": null,
+        "execution_time": 12.5,
+        "error": null
+      }
+      ```
 
-### 4.4 Data Explorer
-Provides a simple table view to browse table data.
-- **API**:
-  - `GET /api/tables/:name/data?page=1&limit=50`: Get paginated table data.
+### 4.4 API Security
+Basic security measures are implemented to protect the interface.
+- **Authentication**: All API requests (except health check) require an `x-api-key` header.
+  - The key is set via the `API_KEY` environment variable.
+  - Default value: `your-super-secure-key`.
+- **File Access Control**: Database files are restricted to the `./db` directory. Directory traversal (e.g., `../`) is blocked.
 
 ## 5. UI/UX Design Draft
 
-Interface layout adopts a classic **Three-Column Layout** (similar to VS Code or DBeaver):
+Interface layout adopts a classic single page layout:
 
-*   **Header**: Top bar, containing Logo, current database path, supports dropdown for history connections, load button.
+*   **Header**: Top bar, containing Logo, current database path, supports dropdown for history connections, new database button.
 *   **Sidebar (Left)**: Database object browser.
-    *   Collapsible tree structure: Tables, Views, Indexes.
-    *   Clicking a table name can quickly preview data or generate a `SELECT` statement.
+    *   **Tables**: List of table names with drop table button.
+    *   **Add Table**: Button to add a new table.
+    *   Clicking a table name can generate a `SELECT` statement and quickly preview data.
 *   **Main Content (Right)**: Tabbed workspace.
-    *   **SQL Editor Tab**: Upper part is code editor (CodeMirror).
+    *   **SQL Editor**: an simple textarea for inputting SQL statements.
     *   **Tool Bar**: Toolbar, including execute SQL, CRUD operations after selecting rows.
     *   **Table Data Tab**: Pure table browse mode, supporting simple sorting and filtering.
 
