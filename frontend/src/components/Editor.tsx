@@ -22,7 +22,7 @@ const Editor: Component = () => {
       <textarea
         ref={textareaRef}
         class="textarea textarea-bordered w-full font-mono h-24"
-        placeholder="select * from sqlite_master"
+        placeholder="SELECT * FROM sqlite_master"
         value={sqlContent()}
         onInput={(e) => setSqlContent(e.currentTarget.value)}
       ></textarea>

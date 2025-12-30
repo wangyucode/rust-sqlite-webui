@@ -19,11 +19,21 @@ export const fetchTables = async () => {
     try {
         const res = await fetch("http://localhost:3000/api/tables");
         if (res.ok) {
-            setTables(await res.json());
+            const newTables = await res.json();
+            setTables(newTables);
+            if (!currentTable() && newTables.length > 0) {
+                setCurrentTable(newTables[0]);
+            }
+            if (currentTable()) {
+                setSqlContent(`SELECT * FROM ${currentTable()} LIMIT 100`);
+            }
+            await runQuery();
         }
     } catch (e) {
         console.error("Failed to fetch tables", e);
         setTables([]);
+        setCurrentTable(null);
+        setSqlContent("");
     }
 };
 
