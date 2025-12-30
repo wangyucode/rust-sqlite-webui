@@ -1,6 +1,7 @@
 import { Component, createSignal, onMount, For, Show } from "solid-js";
 import ThemeSwitch from "./ThemeSwitch";
 import { fetchTables, resetStore, apiKey, setIsAuthModalOpen } from "../lib/store";
+import { getDbFiles, connectDb } from "../lib/api";
 
 const Navbar: Component = () => {
   // DB Logic
@@ -11,9 +12,6 @@ const Navbar: Component = () => {
   const [errorMsg, setErrorMsg] = createSignal("");
   const [showCreateDialog, setShowCreateDialog] = createSignal(false);
 
-  const API_URL = "http://localhost:3000/api/connect";
-  const FILES_API_URL = "http://localhost:3000/api/db-files";
-
   onMount(async () => {
     // DB Auto-load Logic
     await fetchDbFiles();
@@ -21,20 +19,15 @@ const Navbar: Component = () => {
 
   async function fetchDbFiles() {
     try {
-      const res = await fetch(FILES_API_URL, {
-        headers: { "x-api-key": apiKey() }
-      });
-      if (res.status === 401) {
+      const files = await getDbFiles(apiKey(), () => {
         setIsAuthModalOpen(true);
         setDbFiles([]);
-        return;
-      }
-      if (res.ok) {
-        setDbFiles(await res.json());
-      }
+      });
+      setDbFiles(files);
     } catch (e) {
       console.error("Failed to fetch db files", e);
       setDbFiles([]);
+      return;
     }
 
     const files = dbFiles();
@@ -60,19 +53,7 @@ const Navbar: Component = () => {
     create: boolean = false,
   ): Promise<{ success: boolean; status: number }> {
     try {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey()
-        },
-        body: JSON.stringify({ path, create }),
-      });
-      if (res.status === 401) {
-        setIsAuthModalOpen(true);
-        return { success: false, status: 401 };
-      }
-      return { success: res.ok, status: res.status };
+      return await connectDb(path, create, apiKey(), () => setIsAuthModalOpen(true));
     } catch (e) {
       console.error("Connection failed", e);
       return { success: false, status: 500 };

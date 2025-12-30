@@ -6,8 +6,8 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
+use tower_http::services::{ServeDir};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -57,12 +57,12 @@ async fn main() {
     let app = Router::new()
         .route("/api/health", get(health_check))
         .nest("/api", api_routes)
-        .layer(CorsLayer::permissive()) // 开发阶段允许跨域
+        .fallback_service(ServeDir::new("dist"))
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 
     // 绑定端口
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
     tracing::info!("listening on {}", addr);
     
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
