@@ -1,6 +1,6 @@
 import { Component, createSignal, onMount, For, Show } from "solid-js";
 import ThemeSwitch from "./ThemeSwitch";
-import { tables, setTables } from "../lib/store";
+import { fetchTables } from "../lib/store";
 
 const Navbar: Component = () => {
   // DB Logic
@@ -13,7 +13,6 @@ const Navbar: Component = () => {
 
   const API_URL = "http://localhost:3000/api/connect";
   const FILES_API_URL = "http://localhost:3000/api/db-files";
-  const TABLES_API_URL = "http://localhost:3000/api/tables";
 
   onMount(async () => {
     // DB Auto-load Logic
@@ -42,18 +41,6 @@ const Navbar: Component = () => {
       await autoLoad();
     } else {
       setShowCreateDialog(true);
-    }
-  }
-
-  async function fetchTables() {
-    try {
-      const res = await fetch(TABLES_API_URL);
-      if (res.ok) {
-        setTables(await res.json());
-      }
-    } catch (e) {
-      console.error("Failed to fetch tables", e);
-      setTables([]);
     }
   }
 
