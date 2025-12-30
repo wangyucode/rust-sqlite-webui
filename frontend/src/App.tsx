@@ -3,24 +3,19 @@ import Editor from "./components/Editor";
 import Navbar from "./components/Navbar";
 import ResultTable from "./components/ResultTable";
 import Sidebar from "./components/Sidebar";
+import Toolbar from "./components/Toolbar";
 
 const App: Component = () => {
   return (
-    <div class="min-h-screen bg-base-200 p-4">
+    <div class="h-dvh bg-base-200 flex flex-col">
       <Navbar />
 
-      <div class="grid grid-cols-12 gap-4 h-[calc(100vh-120px)]">
-        {/* Sidebar */}
-        <div class="col-span-3 h-full">
-          <Sidebar />
-        </div>
-
+      <div class="flex-1 flex gap-2 sm:gap-4 p-2 sm:p-4">
+        <Sidebar />
         {/* Main Content */}
-        <div class="col-span-9 flex flex-col gap-4 h-full">
-          {/* Editor */}
+        <div class="flex-1 flex flex-col p-2 sm:p-4 gap-2 sm:gap-4 h-full rounded-box shadow-lg bg-base-100">
           <Editor />
-
-          {/* Results */}
+          <Toolbar />
           <ResultTable />
         </div>
       </div>

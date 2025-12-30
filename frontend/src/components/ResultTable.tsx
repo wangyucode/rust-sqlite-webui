@@ -2,9 +2,9 @@ import { Component } from "solid-js";
 
 const ResultTable: Component = () => {
   return (
-    <div class="bg-base-100 rounded-box p-4 shadow-lg flex-1 overflow-auto">
+    <div class="bg-base-100 flex-1 overflow-auto">
       <h2 class="text-lg font-bold mb-2">Results</h2>
-      <table class="table table-compact w-full">
+      <table class="table table-zebra table-sm border-separate border border-base-300">
         <thead>
           <tr>
             <th>Column 1</th>

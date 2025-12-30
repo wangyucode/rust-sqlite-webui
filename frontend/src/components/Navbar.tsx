@@ -136,7 +136,7 @@ const Navbar: Component = () => {
     const target = e.target as HTMLSelectElement;
     const path = target.value;
     setCurrentPath(path);
-    
+
     if (!path) return;
     setIsLoading(true);
     const { success } = await connectAPI(path);
@@ -156,10 +156,11 @@ const Navbar: Component = () => {
   }
 
   return (
-    <div class="navbar rounded-box bg-base-100 shadow-lg mb-4 gap-4 px-4 justify-between">
-      <h1 class="navbar-start text-xl font-bold w-auto text-primary">
-        SQLite WebUI
-      </h1>
+    <div class="navbar bg-base-100 shadow-lg gap-4 px-4 justify-between">
+      <div class="navbar-start w-auto">
+        <img src="/logo.png" alt="SQLite WebUI" class="size-8 inline-block mr-2" />
+        <h1 class="text-primary text-xl font-bold hidden sm:inline-block">SQLite WebUI</h1>
+      </div>
       <div class="navbar-center flex-1 max-w-128 flex flex-col">
         <div class="join w-full">
           <select
@@ -186,7 +187,6 @@ const Navbar: Component = () => {
               class="size-6"
               fill="currentColor"
               viewBox="0 0 1024 1024"
-              version="1.1"
               xmlns="http://www.w3.org/2000/svg"
             >
               <path d="M456.032 428.064c247.264 0 419.744-62.656 419.744-139.936V204.192c0-77.248-172.448-139.936-419.744-139.936S64.288 126.912 64.288 204.192v83.936c0 77.248 144.448 139.936 391.744 139.936z m-50.784 334.784c-169.824-6.304-268.992-45.056-321.152-96.928-13.312 13.248-19.808 27.36-19.808 41.984v111.936c0 77.248 144.448 139.872 391.744 139.872 24.736 0 48.832-0.768 72.512-2.016a307.2 307.2 0 0 1-123.296-194.848z m-5.12-56.224a306.304 306.304 0 0 1 70.4-194.72c-5.312 0.032-10.432 0.096-15.904 0.096-200.448 0-313.504-41.152-370.528-97.952-13.312 13.28-19.808 27.36-19.808 41.984v111.936c0 71.168 122.976 129.888 335.84 138.656z m307.744-250.56a251.84 251.84 0 1 0 0 503.68 251.84 251.84 0 0 0 0-503.68z m157.44 275.52h-133.76v133.728H684.16v-133.728h-133.728v-47.392h133.728v-133.76h47.424v133.76h133.76v47.392z"></path>

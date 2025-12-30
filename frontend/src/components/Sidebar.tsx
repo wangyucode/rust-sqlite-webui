@@ -3,7 +3,7 @@ import { tables } from "../lib/store";
 
 const Sidebar: Component = () => {
   return (
-    <div class="bg-base-100 rounded-box p-4 shadow-lg h-full overflow-y-auto">
+    <div class="flex-shrink-0 w-24 sm:w-64 bg-base-100 rounded-box p-4 shadow-lg h-full overflow-y-auto">
       <h2 class="text-lg font-bold mb-4 px-2">Tables</h2>
       {tables().length === 0 ? (
         <div class="text-gray-500 text-sm px-2">No tables found</div>
