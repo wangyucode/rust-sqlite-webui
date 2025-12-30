@@ -4,10 +4,12 @@ import Navbar from "./components/Navbar";
 import ResultTable from "./components/ResultTable";
 import Sidebar from "./components/Sidebar";
 import Toolbar from "./components/Toolbar";
+import AuthModal from "./components/AuthModal";
 
 const App: Component = () => {
   return (
     <div class="h-dvh bg-base-200 flex flex-col">
+      <AuthModal />
       <Navbar />
 
       <div class="flex-1 flex gap-2 sm:gap-4 p-2 sm:p-4 min-h-0">

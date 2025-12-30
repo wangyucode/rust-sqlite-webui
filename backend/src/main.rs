@@ -1,4 +1,8 @@
 use axum::{
+    extract::Request,
+    http::{HeaderMap, StatusCode},
+    middleware::{self, Next},
+    response::Response,
     routing::{get, post},
     Router,
 };
@@ -15,6 +19,19 @@ mod handlers;
 use state::AppState;
 use handlers::{health_check, connect_db, execute_query, list_dbs, list_tables};
 
+async fn auth_middleware(
+    headers: HeaderMap,
+    request: Request,
+    next: Next,
+) -> Result<Response, StatusCode> {
+    let api_key = std::env::var("API_KEY").unwrap_or_else(|_| "your-super-secure-key".to_string());
+
+    match headers.get("x-api-key") {
+        Some(key) if key == api_key.as_str() => Ok(next.run(request).await),
+        _ => Err(StatusCode::UNAUTHORIZED),
+    }
+}
+
 #[tokio::main]
 async fn main() {
     // 初始化日志
@@ -30,12 +47,16 @@ async fn main() {
     };
 
     // 构建应用路由
+    let api_routes = Router::new()
+        .route("/connect", post(connect_db))
+        .route("/db-files", get(list_dbs))
+        .route("/tables", get(list_tables))
+        .route("/query", post(execute_query))
+        .layer(middleware::from_fn(auth_middleware));
+
     let app = Router::new()
         .route("/api/health", get(health_check))
-        .route("/api/connect", post(connect_db))
-        .route("/api/db-files", get(list_dbs))
-        .route("/api/tables", get(list_tables))
-        .route("/api/query", post(execute_query))
+        .nest("/api", api_routes)
         .layer(CorsLayer::permissive()) // 开发阶段允许跨域
         .layer(TraceLayer::new_for_http())
         .with_state(state);

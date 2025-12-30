@@ -1,6 +1,6 @@
 import { Component, createSignal, onMount, For, Show } from "solid-js";
 import ThemeSwitch from "./ThemeSwitch";
-import { fetchTables } from "../lib/store";
+import { fetchTables, resetStore, apiKey, setIsAuthModalOpen } from "../lib/store";
 
 const Navbar: Component = () => {
   // DB Logic
@@ -21,7 +21,14 @@ const Navbar: Component = () => {
 
   async function fetchDbFiles() {
     try {
-      const res = await fetch(FILES_API_URL);
+      const res = await fetch(FILES_API_URL, {
+        headers: { "x-api-key": apiKey() }
+      });
+      if (res.status === 401) {
+        setIsAuthModalOpen(true);
+        setDbFiles([]);
+        return;
+      }
       if (res.ok) {
         setDbFiles(await res.json());
       }
@@ -55,9 +62,16 @@ const Navbar: Component = () => {
     try {
       const res = await fetch(API_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey()
+        },
         body: JSON.stringify({ path, create }),
       });
+      if (res.status === 401) {
+        setIsAuthModalOpen(true);
+        return { success: false, status: 401 };
+      }
       return { success: res.ok, status: res.status };
     } catch (e) {
       console.error("Connection failed", e);
@@ -86,6 +100,8 @@ const Navbar: Component = () => {
     setCurrentPath(path);
     setInputPath("");
     setErrorMsg("");
+
+    resetStore();
 
     const files = dbFiles();
     if (!files.includes(path)) {

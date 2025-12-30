@@ -16,6 +16,7 @@ pub struct QueryRequest {
 #[derive(Serialize)]
 pub struct QueryResponse {
     pub columns: Vec<String>,
+    pub column_types: Vec<String>,
     pub rows: Vec<Vec<Value>>,
     pub affected_rows: Option<u64>,
     pub execution_time: f64,
@@ -34,6 +35,7 @@ pub async fn execute_query(
         None => {
             return Json(QueryResponse {
                 columns: vec![],
+                column_types: vec![],
                 rows: vec![],
                 affected_rows: None,
                 execution_time: 0.0,
@@ -59,6 +61,7 @@ pub async fn execute_query(
                 if rows.is_empty() {
                     return Json(QueryResponse {
                         columns: vec![],
+                        column_types: vec![],
                         rows: vec![],
                         affected_rows: None,
                         execution_time,
@@ -67,6 +70,7 @@ pub async fn execute_query(
                 }
 
                 let columns: Vec<String> = rows[0].columns().iter().map(|c| c.name().to_string()).collect();
+                let column_types: Vec<String> = rows[0].columns().iter().map(|c| c.type_info().name().to_string()).collect();
                 
                 let mut data = Vec::new();
                 for row in rows {
@@ -120,6 +124,14 @@ pub async fn execute_query(
                                     }
                                 },
                             }
+                        } else if type_name == "BLOB" {
+                            match row.try_get::<Vec<u8>, _>(i) {
+                                Ok(v) => {
+                                    let hex: String = v.iter().map(|b| format!("{:02X}", b)).collect();
+                                    Value::String(format!("x'{}'", hex))
+                                },
+                                Err(_) => Value::Null,
+                            }
                         } else {
                             match row.try_get::<String, _>(i) {
                                 Ok(v) => Value::String(v),
@@ -136,6 +148,7 @@ pub async fn execute_query(
 
                 Json(QueryResponse {
                     columns,
+                    column_types,
                     rows: data,
                     affected_rows: None,
                     execution_time,
@@ -145,6 +158,7 @@ pub async fn execute_query(
             Err(e) => {
                 Json(QueryResponse {
                     columns: vec![],
+                    column_types: vec![],
                     rows: vec![],
                     affected_rows: None,
                     execution_time,
@@ -160,6 +174,7 @@ pub async fn execute_query(
             Ok(result) => {
                 Json(QueryResponse {
                     columns: vec![],
+                    column_types: vec![],
                     rows: vec![],
                     affected_rows: Some(result.rows_affected()),
                     execution_time,
@@ -169,6 +184,7 @@ pub async fn execute_query(
             Err(e) => {
                 Json(QueryResponse {
                     columns: vec![],
+                    column_types: vec![],
                     rows: vec![],
                     affected_rows: None,
                     execution_time,
