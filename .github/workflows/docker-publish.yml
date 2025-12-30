@@ -28,6 +28,8 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV          
           # Replace version in Cargo.toml with 0.0.0
           sed -i 's/^version = ".*"/version = "0.0.0"/' backend/Cargo.toml
+          # Replace version in backend/Cargo.lock with 0.0.0
+          sed -i '/name = "rust-sqlite-webui"/{n;s/^version = ".*"/version = "0.0.0"/;}' backend/Cargo.lock
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5

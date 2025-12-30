@@ -23,7 +23,7 @@ const handleResponse = async (res: Response, onUnauthorized?: () => void) => {
 };
 
 export const fetchTables = async (apiKey: string, onUnauthorized?: () => void): Promise<string[]> => {
-    const res = await fetch("/api/tables", {
+    const res = await fetch("./api/tables", {
         headers: { "x-api-key": apiKey }
     });
     await handleResponse(res, onUnauthorized);
@@ -34,7 +34,7 @@ export const fetchTables = async (apiKey: string, onUnauthorized?: () => void): 
 };
 
 export const execSql = async (sql: string, apiKey: string, onUnauthorized?: () => void): Promise<QueryResult> => {
-    const response = await fetch("/api/query", {
+    const response = await fetch("./api/query", {
         method: "POST",
         headers: getHeaders(apiKey),
         body: JSON.stringify({ sql }),
@@ -59,7 +59,7 @@ export const execSql = async (sql: string, apiKey: string, onUnauthorized?: () =
 };
 
 export const getDbFiles = async (apiKey: string, onUnauthorized?: () => void): Promise<string[]> => {
-    const res = await fetch("/api/db-files", {
+    const res = await fetch("./api/db-files", {
         headers: { "x-api-key": apiKey }
     });
     await handleResponse(res, onUnauthorized);
@@ -75,7 +75,7 @@ export const connectDb = async (
     apiKey: string,
     onUnauthorized?: () => void
 ): Promise<{ success: boolean; status: number }> => {
-    const res = await fetch("/api/connect", {
+    const res = await fetch("./api/connect", {
         method: "POST",
         headers: getHeaders(apiKey),
         body: JSON.stringify({ path, create }),
