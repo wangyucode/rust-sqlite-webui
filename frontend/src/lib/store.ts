@@ -4,11 +4,13 @@ export const [tables, setTables] = createSignal<string[]>([]);
 export const [sqlContent, setSqlContent] = createSignal<string>("");
 export const [shouldFocusSqlInput, setShouldFocusSqlInput] = createSignal<boolean>(false);
 export const [currentTable, setCurrentTable] = createSignal<string | null>(null);
+export const [selectedRowIndices, setSelectedRowIndices] = createSignal<number[]>([]);
 
 export interface QueryResult {
     columns: string[];
     rows: any[][];
     executionTime?: number;
+    affectedRows?: number;
     error?: string;
 }
 
@@ -61,6 +63,7 @@ export const runQuery = async (sqlOverride?: string) => {
 
     setIsQuerying(true);
     setQueryResult(null);
+    setSelectedRowIndices([]);
     const startTime = performance.now();
 
     try {
@@ -69,12 +72,23 @@ export const runQuery = async (sqlOverride?: string) => {
         setQueryResult({
             columns: data.columns || [],
             rows: data.rows || [],
-            executionTime: performance.now() - startTime,
+            executionTime: data.execution_time,
+            affectedRows: data.affected_rows,
             error: undefined
         });
 
         if (sql.trim().toLowerCase().match(/^\s*(create|drop)\s+table\b/)) {
             await fetchTables();
+        } else if (sql.trim().toLowerCase().match(/^\s*(insert|update|delete)\b/) && currentTable()) {
+            const selectSql = `SELECT * FROM "${currentTable()}" LIMIT 100`;
+            const selectData = await execSql(selectSql);
+            setQueryResult({
+                columns: selectData.columns || [],
+                rows: selectData.rows || [],
+                executionTime: data.execution_time,
+                affectedRows: data.affected_rows,
+                error: undefined
+            });
         }
     } catch (error: any) {
         setQueryResult({
