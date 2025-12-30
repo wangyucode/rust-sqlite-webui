@@ -4,13 +4,15 @@
 		{
 			"label": "Run Backend",
 			"type": "shell",
-			"command": "cargo run",
+			"command": "cargo watch -x run",
 			"options": {
 				"env": {
 					"RUST_LOG": "debug"
 				}
 			},
-			"group": "none",
+			"group": {
+                "kind": "build"
+            },
 			"presentation": {
 				"reveal": "always",
 				"panel": "new",

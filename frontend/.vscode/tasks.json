@@ -4,8 +4,10 @@
 		{
 			"label": "Run Frontend",
 			"type": "shell",
-			"command": "npm start",
-			"group": "none",
+			"command": "pnpm start",
+			"group": {
+				"kind": "build"
+			},
 			"presentation": {
 				"reveal": "always",
 				"panel": "new",

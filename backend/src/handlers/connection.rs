@@ -88,3 +88,23 @@ pub async fn connect_db(
         }
     }
 }
+
+pub async fn list_tables(State(state): State<AppState>) -> impl IntoResponse {
+    let db = state.db.read().await;
+
+    if let Some(pool) = db.as_ref() {
+        let query = "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name";
+        match sqlx::query_scalar::<_, String>(query)
+            .fetch_all(pool)
+            .await 
+        {
+            Ok(tables) => Json(tables).into_response(),
+            Err(e) => {
+                tracing::error!("Failed to fetch tables: {}", e);
+                (StatusCode::INTERNAL_SERVER_ERROR, "Failed to fetch tables").into_response()
+            }
+        }
+    } else {
+        (StatusCode::BAD_REQUEST, "No database connected").into_response()
+    }
+}

@@ -2,12 +2,12 @@
 
 # SQLite WebUI
 
-基于 Rust (Axum) 和 Svelte 5 的轻量级 SQLite Web 管理工具。
+基于 Rust (Axum) 和 Solid.js 的轻量级 SQLite Web 管理工具。
 
 ## 技术栈
 
 - **后端**: Rust, Axum, SQLx, Tokio
-- **前端**: Svelte 5, Vite, TailwindCSS, DaisyUI
+- **前端**: Solid.js, Vite, TailwindCSS, DaisyUI
 
 ## 快速开始
 
@@ -16,9 +16,9 @@
 需要安装 Node.js (v18+)。
 
 ```bash
-cd web
-npm install
-npm start
+cd frontend
+pnpm install
+pnpm start
 ```
 
 前端服务默认运行在 `http://localhost:5173`。
@@ -28,7 +28,7 @@ npm start
 需要安装 Rust (cargo)。
 
 ```bash
-# 在项目根目录
+cd backend
 cargo run
 ```
 
@@ -38,15 +38,18 @@ cargo run
 
 **构建前端**:
 ```bash
-cd web
-npm run build
+cd frontend
+pnpm build
 ```
-构建产物位于 `web/dist`。
+构建产物位于 `frontend/dist`。
 
 **构建后端**:
 ```bash
+cd backend
 cargo build --release
 ```
+
+后端发布二进制文件位于 `backend/target/release`。
 
 ## 文档
 

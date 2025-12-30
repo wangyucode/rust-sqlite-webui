@@ -13,7 +13,7 @@ mod state;
 mod handlers;
 
 use state::AppState;
-use handlers::{health_check, connect_db, execute_query, list_dbs};
+use handlers::{health_check, connect_db, execute_query, list_dbs, list_tables};
 
 #[tokio::main]
 async fn main() {
@@ -34,6 +34,7 @@ async fn main() {
         .route("/api/health", get(health_check))
         .route("/api/connect", post(connect_db))
         .route("/api/db-files", get(list_dbs))
+        .route("/api/tables", get(list_tables))
         .route("/api/query", post(execute_query))
         .layer(CorsLayer::permissive()) // 开发阶段允许跨域
         .layer(TraceLayer::new_for_http())

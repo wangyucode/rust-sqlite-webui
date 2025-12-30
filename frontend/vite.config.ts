@@ -1,13 +1,17 @@
 import { defineConfig } from "vite";
-import { svelte } from "@sveltejs/vite-plugin-svelte";
+import solidPlugin from "vite-plugin-solid";
 import tailwindcss from '@tailwindcss/vite';
+import devtools from 'solid-devtools/vite';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-	plugins: [svelte(), tailwindcss()],
-	server: {
-		proxy: {
-			"/api": "http://localhost:3000",
-		},
-	},
+  plugins: [devtools(), solidPlugin(), tailwindcss()],
+  server: {
+    proxy: {
+      "/api": "http://localhost:3000",
+    },
+  },
+  build: {
+    target: "esnext",
+  },
 });
