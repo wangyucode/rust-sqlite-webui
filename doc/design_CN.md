@@ -33,7 +33,7 @@
 graph TD
     User[用户浏览器] <--> |HTTP/WebSocket| Backend[Rust Axum Server]
     Backend <--> |SQLx| SQLite[SQLite DB File]
-    Backend --> |Serve| Static[前端静态资源 (SolidJS构建产物)]
+    Backend --> |Serve| Static[前端静态资源 - SolidJS构建产物]
 ```
 
 ### 3.2 目录结构规划
