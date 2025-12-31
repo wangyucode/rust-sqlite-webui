@@ -2,7 +2,7 @@
   <img src="frontend/public/logo.png" width=256></img>
   <p><strong>Rust SQLite WebUI - A extreme lightweight SQLite Web administration tool</strong></p>
   
-  English | [简体中文](README.ZH-CN.md)
+  English | [简体中文](README_CN.md)
   
 </div>
 
