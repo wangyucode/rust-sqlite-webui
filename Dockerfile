@@ -31,7 +31,8 @@ COPY backend/src ./src
 # Touch main.rs to force rebuild of the application
 # Remove the fingerprint of the dummy build to ensure full rebuild of the bin
 RUN touch src/main.rs
-RUN cargo build --release
+ARG APP_VERSION
+RUN APP_VERSION=${APP_VERSION} cargo build --release
 
 # Stage 3: Runtime
 FROM alpine:latest
