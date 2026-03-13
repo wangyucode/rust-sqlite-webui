@@ -17,7 +17,7 @@ mod state;
 mod handlers;
 
 use state::AppState;
-use handlers::{health_check, connect_db, execute_query, list_dbs, list_tables};
+use handlers::{health_check, connect_db, execute_query, list_dbs, list_tables, correct_sql};
 
 async fn auth_middleware(
     headers: HeaderMap,
@@ -52,6 +52,7 @@ async fn main() {
         .route("/db-files", get(list_dbs))
         .route("/tables", get(list_tables))
         .route("/query", post(execute_query))
+        .route("/correct", post(correct_sql))
         .layer(middleware::from_fn(auth_middleware));
 
     let app = Router::new()
