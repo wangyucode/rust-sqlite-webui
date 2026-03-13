@@ -58,6 +58,23 @@ export const execSql = async (sql: string, apiKey: string, onUnauthorized?: () =
     };
 };
 
+export const aiCorrectSql = async (sql: string, apiKey: string, onUnauthorized?: () => void): Promise<{ sql: string; error?: string }> => {
+    const response = await fetch("./api/ai/correct", {
+        method: "POST",
+        headers: getHeaders(apiKey),
+        body: JSON.stringify({ sql }),
+    });
+
+    await handleResponse(response, onUnauthorized);
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "Failed to correct SQL");
+    }
+
+    return data;
+};
+
 export const getDbFiles = async (apiKey: string, onUnauthorized?: () => void): Promise<string[]> => {
     const res = await fetch("./api/db-files", {
         headers: { "x-api-key": apiKey }

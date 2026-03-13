@@ -4,10 +4,12 @@ use axum::{
     Json,
 };
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{json, Value};
 use sqlx::{Column, Row, TypeInfo};
 use sqlx::sqlite::SqliteRow;
 use crate::state::AppState;
+use reqwest::Client;
+use std::env;
 
 #[derive(Deserialize)]
 pub struct QueryRequest {
@@ -24,6 +26,16 @@ pub struct QueryResponse {
     pub error: Option<String>,
 }
 
+#[derive(Deserialize)]
+pub struct AICorrectRequest {
+    pub sql: String,
+}
+
+#[derive(Serialize)]
+pub struct AICorrectResponse {
+    pub sql: String,
+    pub error: Option<String>,
+}
 
 fn serialize_row(row: &SqliteRow) -> Vec<Value> {
     let mut row_data = Vec::new();
@@ -88,7 +100,6 @@ fn serialize_row(row: &SqliteRow) -> Vec<Value> {
             match row.try_get::<String, _>(i) {
                 Ok(v) => Value::String(v),
                 Err(_) => {
-                    // Fallback: try to convert whatever it is to string if possible, or use a placeholder
                     Value::String(format!("[{}]", type_name))
                 }
             }
@@ -147,7 +158,6 @@ pub async fn execute_query(
                 let columns: Vec<String> = rows[0].columns().iter().map(|c| c.name().to_string()).collect();
                 let column_types: Vec<String> = rows[0].columns().iter().map(|c| c.type_info().name().to_string()).collect();
                 
-                // Use the helper function to map rows
                 let data: Vec<Vec<Value>> = rows.iter().map(serialize_row).collect();
 
                 Json(QueryResponse {
@@ -196,5 +206,62 @@ pub async fn execute_query(
                 })
             }
         }
+    }
+}
+
+pub async fn ai_correct_sql(
+    Json(payload): Json<AICorrectRequest>,
+) -> impl IntoResponse {
+    let api_key = env::var("OPENAI_API_KEY").unwrap_or_default();
+    let api_base = env::var("OPENAI_API_BASE").unwrap_or_else(|_| "https://api.deepseek.com".to_string());
+    let model = env::var("OPENAI_MODEL_NAME").unwrap_or_else(|_| "deepseek-chat".to_string());
+
+    if api_key.is_empty() {
+        return Json(AICorrectResponse {
+            sql: payload.sql,
+            error: Some("OPENAI_API_KEY is not set in environment".to_string()),
+        });
+    }
+
+    let client = Client::new();
+    let response = client
+        .post(format!("{}/chat/completions", api_base))
+        .header("Authorization", format!("Bearer {}", api_key))
+        .json(&json!({
+            "model": model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are a professional SQL expert. Your task is to correct the provided SQLite SQL query. Return ONLY the corrected SQL query without any explanation or markdown formatting."
+                },
+                {
+                    "role": "user",
+                    "content": format!("Correct this SQLite query: {}", payload.sql)
+                }
+            ],
+            "temperature": 0.0
+        }))
+        .send()
+        .await;
+
+    match response {
+        Ok(resp) => {
+            let body: Value = resp.json().await.unwrap_or(json!({}));
+            if let Some(content) = body["choices"][0]["message"]["content"].as_str() {
+                Json(AICorrectResponse {
+                    sql: content.trim().to_string(),
+                    error: None,
+                })
+            } else {
+                Json(AICorrectResponse {
+                    sql: payload.sql,
+                    error: Some("Invalid response from AI API".to_string()),
+                })
+            }
+        }
+        Err(e) => Json(AICorrectResponse {
+            sql: payload.sql,
+            error: Some(e.to_string()),
+        }),
     }
 }

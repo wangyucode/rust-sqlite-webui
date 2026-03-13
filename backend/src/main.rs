@@ -17,7 +17,7 @@ mod state;
 mod handlers;
 
 use state::AppState;
-use handlers::{health_check, connect_db, execute_query, list_dbs, list_tables};
+use handlers::{health_check, connect_db, execute_query, list_dbs, list_tables, ai_correct_sql};
 
 async fn auth_middleware(
     headers: HeaderMap,
@@ -34,6 +34,9 @@ async fn auth_middleware(
 
 #[tokio::main]
 async fn main() {
+    // Load .env file
+    dotenvy::dotenv().ok();
+    
     // 初始化日志
     tracing_subscriber::registry()
     .with(tracing_subscriber::EnvFilter::new(
@@ -52,6 +55,7 @@ async fn main() {
         .route("/db-files", get(list_dbs))
         .route("/tables", get(list_tables))
         .route("/query", post(execute_query))
+        .route("/ai/correct", post(ai_correct_sql))
         .layer(middleware::from_fn(auth_middleware));
 
     let app = Router::new()
