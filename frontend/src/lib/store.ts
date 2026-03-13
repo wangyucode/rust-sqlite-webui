@@ -49,6 +49,10 @@ export const execSql = async (sql: string) => {
     return api.execSql(sql, apiKey(), onUnauthorized);
 };
 
+export const correctSql = async (sql: string, error: string) => {
+  return api.correctSql(sql, error, apiKey(), onUnauthorized);
+};
+
 export const runQuery = async (sqlOverride?: string) => {
     const sql = sqlOverride || sqlContent();
     if (!sql.trim()) return;

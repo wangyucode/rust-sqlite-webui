@@ -87,3 +87,19 @@ export const connectDb = async (
     }
     return { success: res.ok, status: res.status };
 };
+
+export const correctSql = async (
+    sql: string,
+    error: string,
+    apiKey: string,
+    onUnauthorized?: () => void
+): Promise<{ corrected_sql: string | null; error: string | null }> => {
+    const response = await fetch("./api/ai/correct-sql", {
+        method: "POST",
+        headers: getHeaders(apiKey),
+        body: JSON.stringify({ sql, error }),
+    });
+
+    await handleResponse(response, onUnauthorized);
+    return await response.json();
+};

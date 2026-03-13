@@ -1,5 +1,5 @@
 import { Component, Show } from "solid-js";
-import { isQuerying, runQuery, currentTable, sqlContent, setSqlContent, selectedRowIndices, execSql, setShouldFocusSqlInput, queryResult } from "../lib/store";
+import { isQuerying, runQuery, currentTable, sqlContent, setSqlContent, selectedRowIndices, execSql, setShouldFocusSqlInput, queryResult, correctSql } from "../lib/store";
 
 const Toolbar: Component = () => {
   const handleRefresh = async () => {
@@ -166,6 +166,18 @@ const Toolbar: Component = () => {
     }
   };
 
+  const handleCorrect = async () => {
+    const res = queryResult();
+    if (res?.error) {
+      const correction = await correctSql(sqlContent(), res.error);
+      if (correction.corrected_sql) {
+        setSqlContent(correction.corrected_sql);
+      } else if (correction.error) {
+        alert(correction.error);
+      }
+    }
+  };
+
   return (
     <div class="flex gap-2">
       <button
@@ -179,6 +191,16 @@ const Toolbar: Component = () => {
             <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
           </svg>
         </Show>
+      </button>
+      <button
+        class="btn btn-sm btn-square btn-primary"
+        title="AI Correct"
+        onClick={handleCorrect}
+        disabled={isQuerying() || !queryResult()?.error}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 10.25l-.259-1.535a1.5 1.5 0 0 0-1.226-1.226L15 7.241l1.515-.259a1.5 1.5 0 0 0 1.226-1.226L18 4.241l.259 1.515a1.5 1.5 0 0 0 1.226 1.226L21 7.241l-1.515.259a1.5 1.5 0 0 0-1.226 1.226Zm-13.504 3.414.127.751a1.5 1.5 0 0 0 1.226 1.226l.751.127-.751.127a1.5 1.5 0 0 0-1.226 1.226l-.127.751-.127-.751a1.5 1.5 0 0 0-1.226-1.226l-.751-.127.751-.127a1.5 1.5 0 0 0 1.226-1.226l.127-.751Z" />
+        </svg>
       </button>
       <button
         class="btn btn-sm btn-square btn-info"
