@@ -92,23 +92,19 @@ export const runQuery = async (sqlOverride?: string) => {
 };
 
 export const correctSql = async () => {
-    const res = queryResult();
     const sql = sqlContent();
-    if (!res?.error || !sql) return;
+    if (!sql) return;
 
     setIsCorrecting(true);
     try {
-        const result = await api.correctSql(sql, res.error, apiKey(), onUnauthorized);
-        if (result.corrected_sql) {
-            setSqlContent(result.corrected_sql);
-            setQueryResult({
-                ...res,
-                error: (res.error || "") + "\n\n✨ AI Suggestion: " + (result.explanation || "No explanation provided.")
-            });
+        const result = await api.correctSql(sql, currentTable() || "", apiKey(), onUnauthorized);
+        if (result.sql) {
+            setSqlContent(result.sql);
         } else if (result.error) {
             setQueryResult({
-                ...res,
-                error: (res.error || "") + "\n\n❌ AI Error: " + result.error
+                columns: [],
+                rows: [],
+                error: `❌ AI Error: ${result.error}`
             });
         }
     } catch (e: any) {

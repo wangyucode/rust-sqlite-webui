@@ -59,16 +59,15 @@ export const execSql = async (sql: string, apiKey: string, onUnauthorized?: () =
 };
 
 export interface CorrectResult {
-    corrected_sql?: string;
-    explanation?: string;
+    sql?: string;
     error?: string;
 }
 
-export const correctSql = async (sql: string, error: string, apiKey: string, onUnauthorized?: () => void): Promise<CorrectResult> => {
+export const correctSql = async (sql: string, table: string, apiKey: string, onUnauthorized?: () => void): Promise<CorrectResult> => {
     const response = await fetch("./api/correct", {
         method: "POST",
         headers: getHeaders(apiKey),
-        body: JSON.stringify({ sql, error }),
+        body: JSON.stringify({ sql, table }),
     });
 
     await handleResponse(response, onUnauthorized);

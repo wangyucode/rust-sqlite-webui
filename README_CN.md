@@ -54,9 +54,16 @@ services:
 
 - **DB files**: 它会列出 `/app/db/` 目录下的所有 SQLite 数据库文件。所以只需要将数据库文件挂载到 `/app/db/` 目录即可。
 
-- **API_KEY**: 用于访问 WebUI 的认证密钥。
-  - 默认值: `your-super-secure-key`
-  - 生产环境建议设置复杂的密码。
+- **环境变量**:
+| 变量名 | 默认值 | 说明 |
+| --- | --- | --- |
+| API_KEY | `your-super-secure-key` | 用于访问 WebUI 的认证密钥。|
+| RUST_LOG | `rust_sqlite_webui=debug,tower_http=debug` | 日志级别配置。|
+| OPENAI_API_KEY | - | OpenAI API 密钥（AI 辅助功能必需）。|
+| OPENAI_BASE_URL | `https://api.openai.com/v1` | OpenAI API 地址。|
+| OPENAI_MODEL | `gpt-3.5-turbo` | OpenAI 模型名称。|
+
+> **提示**: 开发环境下可在 `backend/` 目录创建 `.env` 文件配置上述变量。
 
 ## 开发指南
 

@@ -1,25 +1,27 @@
 use axum::{
+    extract::State,
     response::IntoResponse,
     Json,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use reqwest::Client;
+use crate::state::AppState;
 
 #[derive(Deserialize)]
 pub struct CorrectRequest {
     pub sql: String,
-    pub error: String,
+    pub table: String,
 }
 
 #[derive(Serialize)]
 pub struct CorrectResponse {
-    pub corrected_sql: Option<String>,
-    pub explanation: Option<String>,
+    pub sql: Option<String>,
     pub error: Option<String>,
 }
 
 pub async fn correct_sql(
+    State(state): State<AppState>,
     Json(payload): Json<CorrectRequest>,
 ) -> impl IntoResponse {
     let api_key = std::env::var("OPENAI_API_KEY");
@@ -28,27 +30,65 @@ pub async fn correct_sql(
 
     if api_key.is_err() {
         return Json(CorrectResponse {
-            corrected_sql: None,
-            explanation: None,
+            sql: None,
             error: Some("OPENAI_API_KEY not configured".to_string()),
         });
     }
 
+    let db = state.db.read().await;
+    let schema = if let Some(pool) = db.as_ref() {
+        let columns: Vec<(String, String, bool, bool)> = sqlx::query_as::<_, (String, String, bool, bool)>(
+            "SELECT name, type, notnull = 1, pk = 1 FROM pragma_table_info(?)"
+        )
+        .bind(&payload.table)
+        .fetch_all(pool)
+        .await
+        .unwrap_or_default();
+
+        let foreign_keys: Vec<(String, String, String)> = sqlx::query_as::<_, (String, String, String)>(
+            "SELECT `from`, `table`, `to` FROM pragma_foreign_key_list(?)"
+        )
+        .bind(&payload.table)
+        .fetch_all(pool)
+        .await
+        .unwrap_or_default();
+
+        let mut schema_str = String::new();
+        for (name, col_type, not_null, pk) in &columns {
+            schema_str.push_str(&format!("  {} {}", col_type, name));
+            if *pk { schema_str.push_str(" PRIMARY KEY"); }
+            if *not_null { schema_str.push_str(" NOT NULL"); }
+            schema_str.push('\n');
+        }
+        for (from, to_table, to_col) in &foreign_keys {
+            schema_str.push_str(&format!("  {} REFERENCES {}({})\n", from, to_table, to_col));
+        }
+        schema_str
+    } else {
+        String::new()
+    };
+    drop(db);
+
     let client = Client::new();
     let prompt = format!(
-        "The following SQLite query failed:\n\nquery: {}\n\nerror: {}\n\nPlease correct the SQL query. Provide only the corrected SQL and a brief explanation. Return a JSON object with keys 'corrected_sql' and 'explanation'.",
-        payload.sql, payload.error
+        "Correct the following SQL using SQLite dialect.\n\
+        Table: {}\n\
+        Schema:\n{}\n\
+        SQL: {}\n\n\
+        if you have no idea just return a basic query that can run.",
+        payload.table, schema, payload.sql
     );
+    tracing::debug!("AI API prompt: {}", prompt);
 
     let response = client.post(format!("{}/chat/completions", base_url))
         .bearer_auth(api_key.unwrap())
         .json(&json!({
             "model": model,
             "messages": [
-                {"role": "system", "content": "You are a helpful SQL expert assistant. Always return JSON."},
+                {"role": "system", "content": "You are a helpful SQL expert assistant. Always return raw SQL string without any format."},
                 {"role": "user", "content": prompt}
             ],
-            "response_format": { "type": "json_object" }
+            "reasoning_effort": "low"
         }))
         .send()
         .await;
@@ -57,26 +97,23 @@ pub async fn correct_sql(
         Ok(resp) => {
             if resp.status().is_success() {
                 let body: Value = resp.json().await.unwrap_or(json!({}));
-                let content = body["choices"][0]["message"]["content"].as_str().unwrap_or("{}");
-                let parsed: Value = serde_json::from_str(content).unwrap_or(json!({}));
+                let content = body["choices"][0]["message"]["content"].as_str().unwrap_or("");
+                tracing::info!("AI API response: {}", content);
                 
                 Json(CorrectResponse {
-                    corrected_sql: parsed["corrected_sql"].as_str().map(|s| s.to_string()),
-                    explanation: parsed["explanation"].as_str().map(|s| s.to_string()),
+                    sql: Some(content.to_string()),
                     error: None,
                 })
             } else {
                 Json(CorrectResponse {
-                    corrected_sql: None,
-                    explanation: None,
+                    sql: None,
                     error: Some(format!("AI API returned error: {}", resp.status())),
                 })
             }
         }
         Err(e) => {
             Json(CorrectResponse {
-                corrected_sql: None,
-                explanation: None,
+                sql: None,
                 error: Some(e.to_string()),
             })
         }

@@ -6,7 +6,12 @@
 version: 2
 updates:
   - package-ecosystem: "cargo" # See documentation for possible values
-    directory: "/" # Location of package manifests
+    directory: "backend" # Location of package manifests
+    schedule:
+      interval: "monthly"
+    target-branch: "dev"
+  - package-ecosystem: "npm" # See documentation for possible values
+    directory: "frontend" # Location of package manifests
     schedule:
       interval: "monthly"
     target-branch: "dev"

@@ -34,6 +34,8 @@ async fn auth_middleware(
 
 #[tokio::main]
 async fn main() {
+    dotenv::dotenv().ok();
+
     // 初始化日志
     tracing_subscriber::registry()
     .with(tracing_subscriber::EnvFilter::new(
