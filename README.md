@@ -11,8 +11,9 @@
 
 A extreme lightweight SQLite Web administration tool based on Rust (Axum) and Solid.js.
 
-- **Extreme Lightweight**: Docker image size is only **~6.5MB**.
-- **High Performance**: Runtime memory usage is only **~700KB**.
+- 🐳 **Extreme Lightweight**: Docker image size is only **~6.5MB**.
+- ⚡ **High Performance**: Runtime memory usage is only **~700KB**.
+- 🤖 **AI Assistant**: Intelligently corrects wrong SQL, supports natural language to SQL conversion.
 
 ![screenshot](screenshot.png)
 
