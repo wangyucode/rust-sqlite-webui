@@ -11,7 +11,7 @@
     "@tailwindcss/vite": "^4.1.18",
     "@types/node": "^24",
     "daisyui": "^5.5.14",
-    "solid-devtools": "^0.34.3",
+    "solid-devtools": "^0.34.5",
     "solid-js": "^1.9.9",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.9.3",
