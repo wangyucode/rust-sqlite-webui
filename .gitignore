@@ -1,5 +1,6 @@
 /backend/target
 /backend/db
+/backend/.env
 /frontend/node_modules
 **/dist
 

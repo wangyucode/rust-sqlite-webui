@@ -15,6 +15,7 @@ export const [selectedRowIndices, setSelectedRowIndices] = createSignal<number[]
 
 export const [queryResult, setQueryResult] = createSignal<QueryResult | null>(null);
 export const [isQuerying, setIsQuerying] = createSignal<boolean>(false);
+export const [isCorrecting, setIsCorrecting] = createSignal<boolean>(false);
 
 const onUnauthorized = () => setIsAuthModalOpen(true);
 
@@ -87,5 +88,28 @@ export const runQuery = async (sqlOverride?: string) => {
         });
     } finally {
         setIsQuerying(false);
+    }
+};
+
+export const correctSql = async () => {
+    const sql = sqlContent();
+    if (!sql) return;
+
+    setIsCorrecting(true);
+    try {
+        const result = await api.correctSql(sql, currentTable() || "", apiKey(), onUnauthorized);
+        if (result.sql) {
+            setSqlContent(result.sql);
+        } else if (result.error) {
+            setQueryResult({
+                columns: [],
+                rows: [],
+                error: `❌ AI Error: ${result.error}`
+            });
+        }
+    } catch (e: any) {
+        console.error("Failed to correct SQL", e);
+    } finally {
+        setIsCorrecting(false);
     }
 };

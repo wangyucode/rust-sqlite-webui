@@ -55,9 +55,16 @@ services:
 
 - **DB files**: it will list the SQLite database files in the `/app/db/` directory. so just mount the dbs to `/app/db/` directory.
 
-- **API_KEY**: The authentication key for accessing the WebUI.
-  - Default: `your-super-secure-key`
-  - It is recommended to set a strong password in production.
+- **Environment Variables**:
+| Variable | Default | Description |
+| --- | --- | --- |
+| API_KEY | `your-super-secure-key` | Authentication key for accessing the WebUI. |
+| RUST_LOG | `rust_sqlite_webui=debug,tower_http=debug` | Logging level configuration. |
+| OPENAI_API_KEY | - | OpenAI API key (required for AI assistant). |
+| OPENAI_BASE_URL | `https://api.openai.com/v1` | OpenAI API base URL. |
+| OPENAI_MODEL | `gpt-3.5-turbo` | OpenAI model name. |
+
+> **Tip**: For development, create a `.env` file in `backend/` directory to configure these variables.
 
 ## Development
 
