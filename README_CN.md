@@ -10,8 +10,8 @@
 
 基于 Rust (Axum) 和 Solid.js 的 **极致轻量** SQLite Web 管理工具。
 
-- 🐳 **极致轻量**: Docker 镜像大小仅 **~6.5MB**。
-- ⚡ **高性能**: 运行时内存占用仅 **~700KB**。
+- 🐳 **极致轻量**: Docker 镜像大小仅 **~10MB**。
+- ⚡ **高性能**: 运行时内存占用仅 **~1MB**。
 - 🤖 **AI 辅助**: 智能纠正错误 SQL，支持自然语言转 SQL。
 
 ![截图](screenshot.png)
@@ -62,7 +62,7 @@ services:
 | RUST_LOG | `rust_sqlite_webui=debug,tower_http=debug` | 日志级别配置。|
 | OPENAI_API_KEY | - | OpenAI API 密钥（AI 辅助功能必需）。|
 | OPENAI_BASE_URL | `https://api.openai.com/v1` | OpenAI API 地址。|
-| OPENAI_MODEL | `gpt-3.5-turbo` | OpenAI 模型名称。|
+| OPENAI_MODEL | `gpt-5.4-mini` | OpenAI 模型名称。|
 
 > **提示**: 开发环境下可在 `backend/` 目录创建 `.env` 文件配置上述变量。
 
