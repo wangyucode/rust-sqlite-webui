@@ -26,7 +26,7 @@ pub async fn correct_sql(
 ) -> impl IntoResponse {
     let api_key = std::env::var("OPENAI_API_KEY");
     let base_url = std::env::var("OPENAI_BASE_URL").unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
-    let model = std::env::var("OPENAI_MODEL").unwrap_or_else(|_| "gpt-3.5-turbo".to_string());
+    let model = std::env::var("OPENAI_MODEL").unwrap_or_else(|_| "gpt-5.4-mini".to_string());
 
     if api_key.is_err() {
         return Json(CorrectResponse {
@@ -55,13 +55,39 @@ pub async fn correct_sql(
 
         let mut schema_str = String::new();
         for (name, col_type, not_null, pk) in &columns {
-            schema_str.push_str(&format!("  {} {}", col_type, name));
+            schema_str.push_str(&format!("  {} {}",name, col_type));
             if *pk { schema_str.push_str(" PRIMARY KEY"); }
             if *not_null { schema_str.push_str(" NOT NULL"); }
             schema_str.push('\n');
         }
         for (from, to_table, to_col) in &foreign_keys {
             schema_str.push_str(&format!("  {} REFERENCES {}({})\n", from, to_table, to_col));
+        }
+        // try to fetch one sample row from the table
+        let sample_row = sqlx::query(&format!("SELECT * FROM {} LIMIT 1", payload.table))
+            .fetch_optional(pool)
+            .await
+            .ok()
+            .flatten();
+
+        let mut sample_str = String::new();
+        if let Some(row) = sample_row {
+            let mut parts: Vec<String> = Vec::new();
+            for (name, _col_type, _not_null, _pk) in &columns {
+                // try several common types and fall back to NULL
+                let val = row.try_get::<String, &str>(name)
+                    .map(|s| s)
+                    .or_else(|_| row.try_get::<i64, &str>(name).map(|v| v.to_string()))
+                    .or_else(|_| row.try_get::<f64, &str>(name).map(|v| v.to_string()))
+                    .unwrap_or_else(|_| "NULL".to_string());
+                parts.push(format!("{}={}", name, val));
+            }
+            sample_str = parts.join(", ");
+        }
+
+        // append sample row info to schema string for prompt clarity
+        if !sample_str.is_empty() {
+            schema_str.push_str(&format!("\nSample row: {}\n", sample_str));
         }
         schema_str
     } else {
@@ -71,11 +97,11 @@ pub async fn correct_sql(
 
     let client = Client::new();
     let prompt = format!(
-        "Correct the following SQL using SQLite dialect.\n\
+        "Correct/Translate/Complete the User Input to SQL using SQLite dialect.\n\
         Table: {}\n\
         Schema:\n{}\n\
-        SQL: {}\n\n\
-        if you have no idea just return a basic query that can run.",
+        User Input: {}\n\n\
+        If user intent is ambiguous, return a simple SELECT * FROM <table> LIMIT 10.",
         payload.table, schema, payload.sql
     );
     tracing::debug!("AI API prompt: {}", prompt);
@@ -85,7 +111,7 @@ pub async fn correct_sql(
         .json(&json!({
             "model": model,
             "messages": [
-                {"role": "system", "content": "You are a helpful SQL expert assistant. Always return raw SQL string without any format."},
+                {"role": "system", "content": "You are a SQL expert. Always reply a single raw SQL string without any format."},
                 {"role": "user", "content": prompt}
             ],
             "reasoning_effort": "low"

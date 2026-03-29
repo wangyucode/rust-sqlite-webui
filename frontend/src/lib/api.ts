@@ -85,6 +85,16 @@ export const getDbFiles = async (apiKey: string, onUnauthorized?: () => void): P
     throw new Error("Failed to fetch db files");
 };
 
+export interface HealthResult {
+    status: string;
+    version?: string;
+}
+
+export const getHealth = async (): Promise<HealthResult> => {
+    const res = await fetch("./api/health");
+    return await res.json();
+};
+
 export const connectDb = async (
     path: string,
     create: boolean,

@@ -63,7 +63,7 @@ services:
 | RUST_LOG | `rust_sqlite_webui=debug,tower_http=debug` | Logging level configuration. |
 | OPENAI_API_KEY | - | OpenAI API key (required for AI assistant). |
 | OPENAI_BASE_URL | `https://api.openai.com/v1` | OpenAI API base URL. |
-| OPENAI_MODEL | `gpt-3.5-turbo` | OpenAI model name. |
+| OPENAI_MODEL | `gpt-5.4-mini` | OpenAI model name. |
 
 > **Tip**: For development, create a `.env` file in `backend/` directory to configure these variables.
 

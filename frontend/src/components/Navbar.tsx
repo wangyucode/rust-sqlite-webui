@@ -1,9 +1,10 @@
 import { Component, createSignal, onMount, For, Show } from "solid-js";
 import ThemeSwitch from "./ThemeSwitch";
 import { fetchTables, resetStore, apiKey, setIsAuthModalOpen } from "../lib/store";
-import { getDbFiles, connectDb } from "../lib/api";
+import { getDbFiles, connectDb, getHealth } from "../lib/api";
 
 const Navbar: Component = () => {
+  const [appVersion, setAppVersion] = createSignal("");
   // DB Logic
   const [dbFiles, setDbFiles] = createSignal<string[]>([]);
   const [currentPath, setCurrentPath] = createSignal("");
@@ -15,6 +16,10 @@ const Navbar: Component = () => {
   onMount(async () => {
     // DB Auto-load Logic
     await fetchDbFiles();
+
+    // fetch version from health endpoint
+    const h = await getHealth();
+    setAppVersion(h.version || "");
   });
 
   async function fetchDbFiles() {
@@ -143,7 +148,12 @@ const Navbar: Component = () => {
     <div class="navbar bg-base-100 shadow-lg gap-4 px-4 justify-between">
       <div class="navbar-start w-auto">
         <img src="./logo.png" alt="SQLite WebUI" class="size-8 inline-block mr-2" />
-        <h1 class="text-primary text-xl font-bold hidden sm:inline-block">SQLite WebUI</h1>
+        <h1 class="text-primary text-xl font-bold hidden sm:inline-block">
+          SQLite WebUI
+          <Show when={appVersion()}>
+            <span class="text-sm text-base-content/60 ml-2">v{appVersion()}</span>
+          </Show>
+        </h1>
       </div>
       <div class="navbar-center flex-1 max-w-128 flex flex-col">
         <div class="join w-full">

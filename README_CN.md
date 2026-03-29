@@ -62,7 +62,7 @@ services:
 | RUST_LOG | `rust_sqlite_webui=debug,tower_http=debug` | 日志级别配置。|
 | OPENAI_API_KEY | - | OpenAI API 密钥（AI 辅助功能必需）。|
 | OPENAI_BASE_URL | `https://api.openai.com/v1` | OpenAI API 地址。|
-| OPENAI_MODEL | `gpt-3.5-turbo` | OpenAI 模型名称。|
+| OPENAI_MODEL | `gpt-5.4-mini` | OpenAI 模型名称。|
 
 > **提示**: 开发环境下可在 `backend/` 目录创建 `.env` 文件配置上述变量。
 
