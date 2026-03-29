@@ -6,6 +6,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use reqwest::Client;
+use sqlx::Row;
 use crate::state::AppState;
 
 #[derive(Deserialize)]
