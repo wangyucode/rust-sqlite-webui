@@ -6,7 +6,7 @@ use axum::{
 };
 use serde::Deserialize;
 use sqlx::SqlitePool;
-use sqlx::sqlite::SqliteConnectOptions;
+use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode};
 use crate::state::AppState;
 use std::path::Path;
 
@@ -34,7 +34,10 @@ pub async fn list_dbs() -> impl IntoResponse {
                 if let Ok(file_type) = entry.file_type() {
                     if file_type.is_file() {
                         if let Some(name) = entry.file_name().to_str() {
-                            files.push(name.to_string());
+                            // Filter out -wal and -shm files
+                            if !name.ends_with("-wal") && !name.ends_with("-shm") {
+                                files.push(name.to_string());
+                            }
                         }
                     }
                 }
@@ -73,7 +76,8 @@ pub async fn connect_db(
     
     let options = SqliteConnectOptions::new()
         .filename(&full_path)
-        .create_if_missing(payload.create);
+        .create_if_missing(payload.create)
+        .journal_mode(SqliteJournalMode::Wal);
     
     match SqlitePool::connect_with(options).await {
         Ok(pool) => {

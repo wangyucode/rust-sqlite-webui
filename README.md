@@ -15,6 +15,8 @@ A extreme lightweight SQLite Web administration tool based on Rust (Axum) and So
 - ⚡ **High Performance**: Runtime memory usage is only **~1MB**.
 - 🤖 **AI Assistant**: Intelligently corrects wrong SQL, supports natural language to SQL conversion.
 
+![instruction](instruction.jpg)
+
 ![screenshot](screenshot.png)
 
 ## Tech Stack
