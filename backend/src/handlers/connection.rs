@@ -77,7 +77,10 @@ pub async fn connect_db(
     let options = SqliteConnectOptions::new()
         .filename(&full_path)
         .create_if_missing(payload.create)
-        .journal_mode(SqliteJournalMode::Wal);
+        .journal_mode(SqliteJournalMode::Wal)
+        // 关键：设置并发访问超时，防止多进程竞争导致数据库损坏
+        .busy_timeout(std::time::Duration::from_secs(30))
+        .timeout(std::time::Duration::from_secs(30));
     
     match SqlitePool::connect_with(options).await {
         Ok(pool) => {
