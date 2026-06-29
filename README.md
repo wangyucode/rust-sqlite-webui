@@ -56,7 +56,7 @@ services:
 
 ### Configuration
 
-- **DB files**: it will list the SQLite database files in the `/app/db/` directory. so just mount the dbs to `/app/db/` directory.
+| **DB files**: Database files are scanned recursively under `/app/db/`. Subdirectory paths (e.g., `rust/sqlite.db`) are supported for Docker volume mounts like `./rust/data/db:/app/db/rust`. |
 
 - **Environment Variables**:
 | Variable | Default | Description |
