@@ -91,6 +91,11 @@ pub async fn connect_db(
     
     match SqlitePool::connect_with(options).await {
         Ok(pool) => {
+            // Optional: Verify WAL mode
+            if let Err(e) = verify_wal_mode(&pool).await {
+                tracing::warn!("WAL mode verification failed: {}", e);
+            }
+            
             let mut db = state.db.write().await;
             *db = Some(pool);
             tracing::info!("Connected to database: {:?}", full_path);
