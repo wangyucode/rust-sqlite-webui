@@ -55,7 +55,7 @@ services:
 
 ### 配置
 
-- **DB files**: 它会列出 `/app/db/` 目录下的所有 SQLite 数据库文件。所以只需要将数据库文件挂载到 `/app/db/` 目录即可。
+- **DB files**: 数据库文件会在 `/app/db/` 目录下递归扫描。支持子目录路径（例如 `rust/sqlite.db`），可用于 Docker 卷挂载如 `./rust/data/db:/app/db/rust`。
 
 - **环境变量**:
 | 变量名 | 默认值 | 说明 |

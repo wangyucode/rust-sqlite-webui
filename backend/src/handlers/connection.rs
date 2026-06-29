@@ -28,36 +28,44 @@ pub async fn list_dbs() -> impl IntoResponse {
     }
 
     let mut files = Vec::new();
-    match std::fs::read_dir(db_dir) {
-        Ok(entries) => {
+
+    // Recursively scan all subdirectories for .db files
+    fn scan_db_files(dir: &Path, result: &mut Vec<String>) {
+        if let Ok(entries) = std::fs::read_dir(dir) {
             for entry in entries.flatten() {
+                let path = entry.path();
                 if let Ok(file_type) = entry.file_type() {
                     if file_type.is_file() {
                         if let Some(name) = entry.file_name().to_str() {
-                            // Filter out -wal and -shm files
-                            if !name.ends_with("-wal") && !name.ends_with("-shm") {
-                                files.push(name.to_string());
+                            // Exclude WAL/SHM files and only match .db extension
+                            if !name.ends_with("-wal") && !name.ends_with("-shm")
+                               && name.ends_with(".db") {
+                                // Record relative path from db/ directory root
+                                if let Ok(rel) = path.strip_prefix(dir.parent().unwrap_or(dir)) {
+                                    result.push(rel.to_string_lossy().to_string());
+                                }
                             }
                         }
+                    } else if file_type.is_dir() {
+                        // Recurse into subdirectories
+                        scan_db_files(&path, result);
                     }
                 }
             }
-            Json(files).into_response()
-        }
-        Err(e) => {
-            tracing::error!("Failed to read db directory: {}", e);
-             (StatusCode::INTERNAL_SERVER_ERROR, "Failed to read db directory").into_response()
         }
     }
+
+    scan_db_files(db_dir, &mut files);
+    Json(files).into_response()
 }
 
 pub async fn connect_db(
     State(state): State<AppState>,
     Json(payload): Json<ConnectRequest>,
 ) -> impl IntoResponse {
-    // Security check: prevent directory traversal
-    if payload.path.contains('/') || payload.path.contains('\\') || payload.path.contains("..") {
-         return (StatusCode::BAD_REQUEST, "Invalid filename. Only filenames in ./db/ are allowed.").into_response();
+    // Security check: allow subdirectory paths, only block directory traversal
+    if payload.path.contains("..") {
+         return (StatusCode::BAD_REQUEST, "Invalid path: directory traversal not allowed").into_response();
     }
 
     let db_dir = Path::new("db");
@@ -79,11 +87,15 @@ pub async fn connect_db(
         .create_if_missing(payload.create)
         .journal_mode(SqliteJournalMode::Wal)
         // 关键：设置并发访问超时，防止多进程竞争导致数据库损坏
-        .busy_timeout(std::time::Duration::from_secs(30))
-        .timeout(std::time::Duration::from_secs(30));
+        .busy_timeout(std::time::Duration::from_secs(30));
     
     match SqlitePool::connect_with(options).await {
         Ok(pool) => {
+            // Optional: Verify WAL mode
+            if let Err(e) = verify_wal_mode(&pool).await {
+                tracing::warn!("WAL mode verification failed: {}", e);
+            }
+            
             let mut db = state.db.write().await;
             *db = Some(pool);
             tracing::info!("Connected to database: {:?}", full_path);
@@ -114,4 +126,19 @@ pub async fn list_tables(State(state): State<AppState>) -> impl IntoResponse {
     } else {
         (StatusCode::BAD_REQUEST, "No database connected").into_response()
     }
+}
+
+/// Verify WAL mode is working correctly after connection.
+/// SQLite WAL mode requires three files: .db, .db-wal, .db-shm
+pub async fn verify_wal_mode(pool: &SqlitePool) -> Result<(), String> {
+    let mode: String = sqlx::query_scalar("PRAGMA journal_mode")
+        .fetch_one(pool)
+        .await
+        .map_err(|e| format!("Failed to check journal_mode: {}", e))?;
+
+    if mode != "wal" {
+        return Err(format!("Expected WAL mode, got: {}", mode));
+    }
+
+    Ok(())
 }

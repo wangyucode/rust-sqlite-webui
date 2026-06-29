@@ -63,10 +63,11 @@ rust-sqlite-webui/
 
 ### 4.1 Connection Management
 Manage SQLite database connections.
-- **API**:
+| **API**:
   - `POST /api/connect`: Connect to a local SQLite file.
     - **Request**: `{ "path": "test.db", "create": true }`
-  - `GET /api/db-files`: List available database files in the `./db` directory.
+    - Subdirectory paths are supported: `{ "path": "rust/sqlite.db" }` for mounted volumes like `./rust/data/db:/app/db/rust`
+  - `GET /api/db-files`: List available database files in the `./db` directory (recursively scans subdirectories).
   - `GET /api/health`: Health check.
 
 ### 4.2 Database Metadata
@@ -96,7 +97,11 @@ Basic security measures are implemented to protect the interface.
 - **Authentication**: All API requests (except health check) require an `x-api-key` header.
   - The key is set via the `API_KEY` environment variable.
   - Default value: `your-super-secure-key`.
-- **File Access Control**: Database files are restricted to the `./db` directory. Directory traversal (e.g., `../`) is blocked.
+| **File Access Control**: Database files are restricted to the `./db` directory. Directory traversal (e.g., `../`) is blocked. Subdirectory paths are allowed (e.g., `rust/sqlite.db`). |
+
+### 4.5 WAL Mode Verification
+
+After connecting, the `verify_wal_mode()` function checks that SQLite journal mode is set to WAL via `PRAGMA journal_mode`. This ensures WAL files (`.db-wal`, `.db-shm`) are properly managed for concurrent access scenarios typical in Docker volume mounts.
 
 ## 5. UI/UX Design Draft
 
