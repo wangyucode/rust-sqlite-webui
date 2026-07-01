@@ -8,7 +8,7 @@
     "build": "vite build"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.3.0",
+    "@tailwindcss/vite": "^4.3.2",
     "@types/node": "^25",
     "daisyui": "^5.5.20",
     "solid-devtools": "^0.34.5",
