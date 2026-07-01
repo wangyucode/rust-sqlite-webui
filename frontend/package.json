@@ -9,7 +9,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.0",
-    "@types/node": "^25",
+    "@types/node": "^26",
     "daisyui": "^5.5.20",
     "solid-devtools": "^0.34.5",
     "solid-js": "^1.9.12",
