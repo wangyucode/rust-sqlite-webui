@@ -12,7 +12,7 @@
     "@types/node": "^25",
     "daisyui": "^5.5.20",
     "solid-devtools": "^0.34.5",
-    "solid-js": "^1.9.12",
+    "solid-js": "^1.9.13",
     "tailwindcss": "^4.3.0",
     "typescript": "^6.0.3",
     "vite": "^7.3.0",
