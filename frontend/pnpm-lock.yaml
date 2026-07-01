@@ -15,8 +15,8 @@ importers:
         specifier: ^25
         version: 25.5.0
       daisyui:
-        specifier: ^5.5.20
-        version: 5.5.20
+        specifier: ^5.6.7
+        version: 5.6.7
       solid-devtools:
         specifier: ^0.34.5
         version: 0.34.5(solid-js@1.9.12)(vite@7.3.0(@types/node@25.5.0)(jiti@2.7.0)(lightningcss@1.32.0))
@@ -631,8 +631,8 @@ packages:
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
 
-  daisyui@5.5.20:
-    resolution: {integrity: sha512-HemJcjl0Gk9rQ8BcgofN6p+EURrqftQG9wK1Hkxs98i49xe68+QxpNvry+PyxwkIUgrbMpNmZ5ZWjmtffAjfhQ==}
+  daisyui@5.6.7:
+    resolution: {integrity: sha512-FVpuUbesyAUBWNp5pXn9JDF1EWt3IZJzp5Staw1YqfP0MwL36sv3wtmfWeuEBkZcazaQbeZXA91oW5dSB+TUEg==}
 
   debug@4.4.3:
     resolution: {integrity: sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==}
@@ -1451,7 +1451,7 @@ snapshots:
 
   csstype@3.2.3: {}
 
-  daisyui@5.5.20: {}
+  daisyui@5.6.7: {}
 
   debug@4.4.3:
     dependencies:
